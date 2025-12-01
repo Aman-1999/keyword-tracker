@@ -171,7 +171,9 @@ export async function GET(request: Request) {
     // Clean old cache entries if too large
     if (cache.size > 1000) {
       const oldestKey = cache.keys().next().value;
-      cache.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        cache.delete(oldestKey);
+      }
     }
 
     return NextResponse.json({ results }, {

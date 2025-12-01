@@ -40,7 +40,7 @@ export async function GET(
         // Fetch job
         const job = await Job.findOne({
             _id: jobId,
-            userId: new mongoose.Types.ObjectId(userId),
+            userId,
         }).populate('results');
 
         if (!job) {
@@ -98,7 +98,7 @@ export async function DELETE(
         const job = await Job.findOneAndUpdate(
             {
                 _id: jobId,
-                userId: new mongoose.Types.ObjectId(userId),
+                userId,
                 status: { $in: ['pending', 'processing'] }, // Only cancel if not already done
             },
             {

@@ -4,7 +4,7 @@ export interface ISearchHistory extends Document {
     domain: string;
     location: string;
     location_code: number;
-    userId: string;
+    userId: mongoose.Types.ObjectId;
     keywords: string[];
     filters: {
         language: string;

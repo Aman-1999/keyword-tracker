@@ -220,7 +220,7 @@ export async function processJob(jobId: string) {
         console.log(`Starting to process job ${jobId} with ${job.keywords.length} keywords`);
 
         // Deduplicate keywords
-        const uniqueKeywords = [...new Set(job.keywords)];
+        const uniqueKeywords: string[] = [...new Set(job.keywords as string[])];
         console.log(`After deduplication: ${uniqueKeywords.length} unique keywords`);
 
         // Update total count to reflect unique keywords
@@ -229,12 +229,12 @@ export async function processJob(jobId: string) {
 
         // Save search history
         await SearchHistory.create({
-            userId: job.userId,
-            domain: job.domain,
-            location: job.location,
-            location_code: job.location_code,
-            keywords: uniqueKeywords,
-            filters: job.filters,
+            userId: job.userId as mongoose.Types.ObjectId,
+            domain: job.domain as string,
+            location: job.location as string,
+            location_code: job.location_code as number,
+            keywords: uniqueKeywords as string[],
+            filters: job.filters as { language: string; device: string; os: string },
         });
 
         // Check cache for existing results

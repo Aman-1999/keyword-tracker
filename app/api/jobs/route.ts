@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
         // Create job
         const job = await Job.create({
-            userId: new mongoose.Types.ObjectId(userId),
+            userId,
             domain,
             keywords,
             location: location_name || location || 'Unknown',
@@ -133,7 +133,7 @@ export async function GET(request: Request) {
         const skip = parseInt(searchParams.get('skip') || '0');
 
         // Build query
-        const query: any = { userId: new mongoose.Types.ObjectId(userId) };
+        const query: any = { userId };
         if (status) {
             query.status = status;
         }

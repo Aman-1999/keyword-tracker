@@ -106,7 +106,7 @@ export async function POST(request: Request) {
 
         // Save search history
         await SearchHistory.create({
-            userId: new mongoose.Types.ObjectId(userId),
+            userId: user._id,
             domain,
             location: location_name || location || 'Unknown',
             location_code: finalLocationCode || 0,
@@ -226,7 +226,7 @@ export async function POST(request: Request) {
 
                     // Save to database
                     await RankingResult.create({
-                        userId: new mongoose.Types.ObjectId(userId),
+                        userId: user._id,
                         domain,
                         keyword,
                         location: location_name || location || 'Unknown',

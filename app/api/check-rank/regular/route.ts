@@ -2,21 +2,10 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/db';
-import RankingResult from '@/models/RankingResult';
 import SearchHistory from '@/models/SearchHistory';
-import { verifyToken } from '@/lib/jwt';
 
-// Helper function to extract basic SERP data
-function extractBasicSERPData(item: any) {
-    return {
-        rank: item.rank_group || null,
-        rank_absolute: item.rank_absolute || item.rank_group || null,
-        page: item.page || 1,
-        url: item.url || null,
-        title: item.title || null,
-        description: item.description || null,
-    };
-}
+import { verifyToken } from '@/lib/jwt';
+import { submitDomainRankingTasks } from '@/services/dataforseo';
 
 export async function POST(request: Request) {
     try {
@@ -41,7 +30,7 @@ export async function POST(request: Request) {
             );
         }
 
-        const userId = payload.userId;
+        const userId = payload.userId as string;
 
         // Check user's available tokens
         const User = (await import('@/models/User')).default;
@@ -104,182 +93,57 @@ export async function POST(request: Request) {
 
         const finalLocationCode = location_code || (location_name ? null : 2840);
 
-        // Save search history
-        await SearchHistory.create({
+        // Submit tasks using task_post API
+        const taskResult = await submitDomainRankingTasks(
+            domain,
+            keywords,
+            {
+                location_code: finalLocationCode,
+                location_name,
+                language_code: searchFilters.language,
+                device: searchFilters.device as 'desktop' | 'mobile' | 'tablet',
+                os: searchFilters.os,
+                priority: 1, // Standard priority
+                userId,
+                depth: 100,
+            }
+        );
+
+        if (!taskResult.success) {
+            return NextResponse.json(
+                { error: taskResult.error || 'Failed to submit tasks' },
+                { status: 500 }
+            );
+        }
+
+        // Extract task IDs
+        const taskIds = taskResult.data.map(t => t.taskId);
+        console.log(taskResult);
+        // Save search history with task IDs
+        const history = await SearchHistory.create({
             userId: user._id,
             domain,
             location: location_name || location || 'Unknown',
             location_code: finalLocationCode || 0,
             keywords,
             filters: searchFilters,
+            taskIds,
         });
-
-        const results = [];
-        const cleanDomain = domain.replace(/^www\./, '');
-
-        // Process each keyword with live API
-        for (const keyword of keywords) {
-            try {
-                // Check cache first
-                const query: any = {
-                    domain,
-                    keyword,
-                    language: searchFilters.language,
-                    device: searchFilters.device,
-                    os: searchFilters.os,
-                    location_code: finalLocationCode,
-                };
-
-                const cached = await RankingResult.findOne(query).sort({ createdAt: -1 });
-                const cacheExpiry = 7 * 24 * 60 * 60 * 1000;
-
-                if (cached && (Date.now() - new Date(cached.createdAt).getTime()) < cacheExpiry) {
-                    results.push({
-                        keyword,
-                        rank: cached.rank,
-                        url: cached.url,
-                        title: cached.title,
-                        description: cached.description,
-                        source: 'cache',
-                    });
-                    continue;
-                }
-
-                // Fetch from live API
-                const postData: any = {
-                    language_code: searchFilters.language,
-                    keyword: keyword,
-                    device: searchFilters.device,
-                    os: searchFilters.os,
-                    depth: 20,
-                    max_crawl_pages: 1,
-                    location_code: finalLocationCode,
-                };
-
-                postData.stop_crawl_on_match = [{
-                    match_value: cleanDomain,
-                    match_type: "with_subdomains"
-                }];
-
-                const response = await fetch(
-                    'https://api.dataforseo.com/v3/serp/google/organic/live/regular',
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': 'Basic ' + Buffer.from(
-                                `${process.env.DATAFORSEO_LOGIN}:${process.env.DATAFORSEO_PASSWORD}`
-                            ).toString('base64'),
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify([postData]),
-                    }
-                );
-
-                if (!response.ok) {
-                    throw new Error(`DataForSEO API error: ${response.statusText}`);
-                }
-
-                const data = await response.json();
-
-                if (data.tasks && data.tasks[0] && data.tasks[0].result) {
-                    const taskResult = data.tasks[0].result[0];
-                    const items = taskResult.items || [];
-
-                    // Extract top rankers
-                    const topRankers = items
-                        .filter((item: any) => item.type === 'organic')
-                        .slice(0, 3)
-                        .map((item: any) => ({
-                            rank: item.rank_group,
-                            domain: item.domain,
-                            url: item.url,
-                            title: item.title,
-                            description: item.description
-                        }));
-
-                    // Extract metrics
-                    const metrics = {
-                        se_results_count: taskResult.se_results_count,
-                        spell: taskResult.spell,
-                        refinement_chips: taskResult.refinement_chips?.items?.map((chip: any) => chip.title) || []
-                    };
-
-                    // Find our domain
-                    let basicData = {
-                        rank: null,
-                        rank_absolute: null,
-                        page: null,
-                        url: null,
-                        title: null,
-                        description: null,
-                    };
-
-                    for (const item of items) {
-                        if (item.type === 'organic' && item.domain) {
-                            const itemDomain = item.domain.replace(/^www\./, '');
-                            if (itemDomain === cleanDomain || itemDomain.includes(cleanDomain)) {
-                                basicData = extractBasicSERPData(item);
-                                break;
-                            }
-                        }
-                    }
-
-                    // Save to database
-                    await RankingResult.create({
-                        userId: user._id,
-                        domain,
-                        keyword,
-                        location: location_name || location || 'Unknown',
-                        location_code: finalLocationCode || 0,
-                        language: searchFilters.language,
-                        device: searchFilters.device,
-                        os: searchFilters.os,
-                        rank: basicData.rank,
-                        rank_absolute: basicData.rank_absolute,
-                        page: basicData.page,
-                        depth: 20,
-                        url: basicData.url,
-                        title: basicData.title,
-                        description: basicData.description,
-                        top_rankers: topRankers,
-                        se_results_count: metrics.se_results_count,
-                        spell: metrics.spell,
-                        refinement_chips: metrics.refinement_chips,
-                    });
-
-                    results.push({
-                        keyword,
-                        rank: basicData.rank,
-                        url: basicData.url,
-                        title: basicData.title,
-                        description: basicData.description,
-                        source: 'api',
-                    });
-                }
-            } catch (error: any) {
-                console.error(`Error processing keyword "${keyword}":`, error);
-                results.push({
-                    keyword,
-                    rank: null,
-                    url: null,
-                    title: null,
-                    description: null,
-                    source: 'error',
-                    error: error.message,
-                });
-            }
-        }
 
         // Deduct one token from user's account
         user.requestTokens -= 1;
         await user.save();
 
-        console.log(`User ${userId} used 1 token. Remaining: ${user.requestTokens}`);
+        console.log(`User ${userId} submitted ${keywords.length} tasks. History ID: ${history._id}`);
 
         return NextResponse.json({
             success: true,
-            results,
+            historyId: history._id,
+            taskIds,
+            tasksSubmitted: taskResult.data.length,
             tokensRemaining: user.requestTokens,
+            creditsUsed: taskResult.cost,
+            message: `Tasks submitted successfully.`,
         });
     } catch (error: any) {
         console.error('Check rank (regular) error:', error);

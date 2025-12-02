@@ -11,6 +11,7 @@ export interface ISearchHistory extends Document {
         device: string;
         os: string;
     };
+    taskIds: string[];
     createdAt: Date;
 }
 
@@ -26,6 +27,7 @@ const SearchHistorySchema: Schema = new Schema(
             device: { type: String, default: 'desktop' },
             os: { type: String, default: 'windows' },
         },
+        taskIds: { type: [String], default: [] },
     },
     {
         timestamps: true,

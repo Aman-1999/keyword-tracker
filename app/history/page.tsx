@@ -2,73 +2,173 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 import {
-    ArrowLeft, Clock, Globe, MapPin, Search, Loader2, Monitor, Smartphone,
-    Laptop, RefreshCw, Filter, Calendar, TrendingUp
+    Search, Calendar, MapPin, TrendingUp, Download, Filter,
+    ChevronDown, Loader2, AlertCircle, FileJson, FileSpreadsheet, File
 } from 'lucide-react';
+import { exportAsJSON, exportAsCSV, exportAsExcel, prepareExportData } from '@/lib/exportUtils';
 
 interface HistoryItem {
+    _id: string;
     domain: string;
-    lastLocation: string;
-    lastLocationCode: number;
+    location: string;
+    location_code: number;
     keywords: string[];
-    lastSearched: string;
+    createdAt: string;
+    taskIds: string[];
 }
 
 export default function HistoryPage() {
     const router = useRouter();
     const [history, setHistory] = useState<HistoryItem[]>([]);
+    const [filteredHistory, setFilteredHistory] = useState<HistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('all'); // all, today, week, month
+    const [error, setError] = useState('');
+
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState('');
+    const [locationFilter, setLocationFilter] = useState('');
+    const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
-        const fetchHistory = async () => {
-            try {
-                const res = await fetch('/api/user/history');
-                const data = await res.json();
-                if (data.history) {
-                    setHistory(data.history);
-                }
-            } catch (error) {
-                console.error('Failed to fetch history:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchHistory();
     }, []);
 
-    const handleRerun = (item: HistoryItem) => {
-        // Navigate to dashboard with pre-filled data
-        const params = new URLSearchParams({
+    useEffect(() => {
+        applyFilters();
+    }, [history, searchQuery, locationFilter, dateFilter]);
+
+    const fetchHistory = async () => {
+        try {
+            const res = await fetch('/api/user/history');
+            if (!res.ok) throw new Error('Failed to fetch history');
+            const data = await res.json();
+            setHistory(data.history || []);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const applyFilters = () => {
+        let filtered = [...history];
+
+        // Search filter (domain or keywords)
+        if (searchQuery) {
+            filtered = filtered.filter(item =>
+                item.domain.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.keywords.some(k => k.toLowerCase().includes(searchQuery.toLowerCase()))
+            );
+        }
+
+        // Location filter
+        if (locationFilter) {
+            filtered = filtered.filter(item =>
+                item.location.toLowerCase().includes(locationFilter.toLowerCase())
+            );
+        }
+
+        // Date filter
+        if (dateFilter !== 'all') {
+            const now = new Date();
+            const filterDate = new Date();
+
+            switch (dateFilter) {
+                case 'today':
+                    filterDate.setHours(0, 0, 0, 0);
+                    break;
+                case 'week':
+                    filterDate.setDate(now.getDate() - 7);
+                    break;
+                case 'month':
+                    filterDate.setMonth(now.getMonth() - 1);
+                    break;
+            }
+
+            filtered = filtered.filter(item =>
+                new Date(item.createdAt) >= filterDate
+            );
+        }
+
+        setFilteredHistory(filtered);
+    };
+
+    const handleExportHistory = async (format: 'json' | 'csv' | 'excel') => {
+        if (filteredHistory.length === 0) return;
+
+        // For history export, we'll export a summary
+        const exportData = filteredHistory.map(item => ({
             domain: item.domain,
-            location: item.lastLocation || '',
-            locationCode: item.lastLocationCode?.toString() || '',
+            location: item.location,
             keywords: item.keywords.join(', '),
-        });
-        router.push(`/dashboard?${params.toString()}`);
+            date: new Date(item.createdAt).toLocaleDateString(),
+            totalKeywords: item.keywords.length,
+        }));
+
+        const filename = `search-history-${new Date().toISOString().split('T')[0]}`;
+
+        switch (format) {
+            case 'json':
+                const jsonString = JSON.stringify(exportData, null, 2);
+                const jsonBlob = new Blob([jsonString], { type: 'application/json' });
+                downloadBlob(jsonBlob, `${filename}.json`);
+                break;
+            case 'csv':
+                const headers = ['Domain', 'Location', 'Keywords', 'Date', 'Total Keywords'];
+                const csvRows = [
+                    headers.join(','),
+                    ...exportData.map(row => [
+                        escapeCSV(row.domain),
+                        escapeCSV(row.location),
+                        escapeCSV(row.keywords),
+                        row.date,
+                        row.totalKeywords,
+                    ].join(','))
+                ];
+                const csvString = csvRows.join('\n');
+                const csvBlob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+                downloadBlob(csvBlob, `${filename}.csv`);
+                break;
+            case 'excel':
+                // Using CSV for Excel compatibility
+                const excelHeaders = ['Domain', 'Location', 'Keywords', 'Date', 'Total Keywords'];
+                const excelRows = [
+                    excelHeaders.join(','),
+                    ...exportData.map(row => [
+                        escapeCSV(row.domain),
+                        escapeCSV(row.location),
+                        escapeCSV(row.keywords),
+                        row.date,
+                        row.totalKeywords,
+                    ].join(','))
+                ];
+                const excelString = excelRows.join('\n');
+                const excelBlob = new Blob([excelString], { type: 'text/csv;charset=utf-8;' });
+                downloadBlob(excelBlob, `${filename}.csv`);
+                break;
+        }
     };
 
-    const getFilteredHistory = () => {
-        if (filter === 'all') return history;
-
-        const now = new Date();
-        const filtered = history.filter(item => {
-            const date = new Date(item.lastSearched);
-            const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-            if (filter === 'today') return diffDays === 0;
-            if (filter === 'week') return diffDays <= 7;
-            if (filter === 'month') return diffDays <= 30;
-            return true;
-        });
-
-        return filtered;
+    const escapeCSV = (value: string): string => {
+        if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+            return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
     };
 
-    const filteredHistory = getFilteredHistory();
+    const downloadBlob = (blob: Blob, filename: string) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -80,131 +180,207 @@ export default function HistoryPage() {
         });
     };
 
-    return (
-        <div className="min-h-screen bg-slate-950 text-white font-sans selection:bg-indigo-500/30">
-            {/* Background Gradients */}
-            <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/20 blur-[120px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-600/20 blur-[120px]" />
+    const uniqueLocations = Array.from(new Set(history.map(item => item.location)));
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
             </div>
+        );
+    }
 
-            <main className="relative z-10 container mx-auto px-4 py-12 max-w-6xl">
+    return (
+        <div className="min-h-screen bg-gray-50/50">
+            <Navbar />
+
+            <main className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
                 <div className="mb-8">
-                    <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6">
-                        <ArrowLeft size={18} />
-                        <span>Back to Dashboard</span>
-                    </Link>
-
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                            <Clock size={24} />
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900">Search History</h1>
+                            <p className="text-gray-500 mt-2">View and manage your ranking searches</p>
                         </div>
-                        <h1 className="text-3xl font-bold">Search History</h1>
+
+                        {filteredHistory.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => handleExportHistory('json')}
+                                    className="inline-flex items-center px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                                    title="Export as JSON"
+                                >
+                                    <FileJson className="w-4 h-4 mr-2" />
+                                    JSON
+                                </button>
+                                <button
+                                    onClick={() => handleExportHistory('csv')}
+                                    className="inline-flex items-center px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                                    title="Export as CSV"
+                                >
+                                    <File className="w-4 h-4 mr-2" />
+                                    CSV
+                                </button>
+                                <button
+                                    onClick={() => handleExportHistory('excel')}
+                                    className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+                                    title="Export as Excel"
+                                >
+                                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                                    Excel
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Filters */}
-                    <div className="bg-slate-900/50 backdrop-blur-md border border-white/5 rounded-xl p-4">
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <Filter className="h-4 w-4 text-slate-400" />
-                            <span className="text-sm font-medium text-slate-300">Filter:</span>
-                            {['all', 'today', 'week', 'month'].map((f) => (
-                                <button
-                                    key={f}
-                                    onClick={() => setFilter(f)}
-                                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${filter === f
-                                            ? 'bg-indigo-600 text-white shadow-md'
-                                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                                        }`}
-                                >
-                                    {f.charAt(0).toUpperCase() + f.slice(1)}
-                                </button>
-                            ))}
-                            <span className="ml-auto text-sm text-slate-400">
-                                {filteredHistory.length} {filteredHistory.length === 1 ? 'result' : 'results'}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                            >
+                                <Filter className="w-4 h-4" />
+                                {showFilters ? 'Hide Filters' : 'Show Filters'}
+                                <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                            </button>
+                            <span className="text-sm text-gray-500">
+                                {filteredHistory.length} of {history.length} results
                             </span>
                         </div>
+
+                        {showFilters && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-100">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Search Domain/Keywords
+                                    </label>
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="pl-10 block w-full rounded-lg border-gray-200 bg-gray-50/50 p-2.5 text-sm focus:border-indigo-500 focus:bg-white focus:ring-indigo-500 transition-all"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Location
+                                    </label>
+                                    <select
+                                        value={locationFilter}
+                                        onChange={(e) => setLocationFilter(e.target.value)}
+                                        className="block w-full rounded-lg border-gray-200 bg-gray-50/50 p-2.5 text-sm focus:border-indigo-500 focus:bg-white focus:ring-indigo-500 transition-all"
+                                    >
+                                        <option value="">All Locations</option>
+                                        {uniqueLocations.map((location, idx) => (
+                                            <option key={idx} value={location}>{location}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Date Range
+                                    </label>
+                                    <select
+                                        value={dateFilter}
+                                        onChange={(e) => setDateFilter(e.target.value as any)}
+                                        className="block w-full rounded-lg border-gray-200 bg-gray-50/50 p-2.5 text-sm focus:border-indigo-500 focus:bg-white focus:ring-indigo-500 transition-all"
+                                    >
+                                        <option value="all">All Time</option>
+                                        <option value="today">Today</option>
+                                        <option value="week">Last 7 Days</option>
+                                        <option value="month">Last 30 Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {loading ? (
-                    <div className="flex justify-center py-20">
-                        <Loader2 className="animate-spin text-indigo-400" size={32} />
+                {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-8 flex items-center gap-3">
+                        <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                        <p className="text-red-700 font-medium">{error}</p>
                     </div>
-                ) : filteredHistory.length === 0 ? (
-                    <div className="text-center py-20 bg-slate-900/50 backdrop-blur-md rounded-2xl border border-white/5">
-                        <Clock className="h-16 w-16 text-slate-600 mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold text-slate-300 mb-2">No search history found</h3>
-                        <p className="text-slate-400 mb-6">
-                            {filter === 'all'
-                                ? 'Start checking rankings to build your search history'
-                                : `No searches found in the selected time period`}
+                )}
+
+                {filteredHistory.length === 0 ? (
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                        <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">No Search History</h3>
+                        <p className="text-gray-500 mb-6">
+                            {searchQuery || locationFilter || dateFilter !== 'all'
+                                ? 'No results match your filters. Try adjusting your search criteria.'
+                                : 'Start tracking your rankings by running your first search.'}
                         </p>
-                        <Link
-                            href="/dashboard"
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors"
+                        <button
+                            onClick={() => router.push('/dashboard')}
+                            className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors"
                         >
-                            <Search size={16} />
-                            Start New Search
-                        </Link>
+                            <Search className="w-4 h-4 mr-2" />
+                            New Search
+                        </button>
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        {filteredHistory.map((item, index) => (
-                            <div key={index} className="bg-slate-900/50 backdrop-blur-md border border-white/5 rounded-xl p-6 hover:border-white/10 transition-all group">
-                                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                                    <div className="space-y-4 flex-1">
-                                        {/* Domain */}
-                                        <div className="flex items-center gap-3">
-                                            <Globe size={20} className="text-indigo-400" />
-                                            <h3 className="text-xl font-bold text-slate-200 group-hover:text-white transition-colors">
-                                                {item.domain}
-                                            </h3>
+                    <div className="grid gap-4">
+                        {filteredHistory.map((item) => (
+                            <div
+                                key={item._id}
+                                onClick={() => router.push(`/results/${item._id}`)}
+                                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer group"
+                            >
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div className="flex-1">
+                                        <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors mb-2">
+                                            {item.domain}
+                                        </h3>
+                                        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                                            <span className="flex items-center gap-1">
+                                                <MapPin className="w-4 h-4" />
+                                                {item.location}
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Calendar className="w-4 h-4" />
+                                                {formatDate(item.createdAt)}
+                                            </span>
+                                            <span className="flex items-center gap-1">
+                                                <Search className="w-4 h-4" />
+                                                {item.keywords.length} keywords
+                                            </span>
                                         </div>
-
-                                        {/* Details */}
-                                        <div className="flex flex-wrap gap-4 text-sm">
-                                            <div className="flex items-center gap-2 text-slate-400">
-                                                <MapPin size={14} className="text-purple-400" />
-                                                <span>{item.lastLocation}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-slate-400">
-                                                <TrendingUp size={14} className="text-green-400" />
-                                                <span>{item.keywords.length} {item.keywords.length === 1 ? 'keyword' : 'keywords'}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-slate-400">
-                                                <Calendar size={14} className="text-blue-400" />
-                                                <span>{formatDate(item.lastSearched)}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Keywords */}
-                                        <div className="bg-slate-800/50 rounded-lg p-3 border border-white/5">
-                                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                                                Keywords
-                                            </p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {item.keywords.slice(0, 8).map((keyword, idx) => (
-                                                    <span key={idx} className="px-2 py-1 rounded-md bg-slate-700/50 border border-white/5 text-sm text-slate-300">
-                                                        {keyword}
-                                                    </span>
-                                                ))}
-                                                {item.keywords.length > 8 && (
-                                                    <span className="px-2 py-1 rounded-md bg-indigo-600/20 border border-indigo-500/30 text-sm text-indigo-300 font-medium">
-                                                        +{item.keywords.length - 8} more
-                                                    </span>
-                                                )}
-                                            </div>
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            {item.keywords.slice(0, 5).map((keyword, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium"
+                                                >
+                                                    {keyword}
+                                                </span>
+                                            ))}
+                                            {item.keywords.length > 5 && (
+                                                <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                                                    +{item.keywords.length - 5} more
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
 
-                                    {/* Re-run Button */}
-                                    <button
-                                        onClick={() => handleRerun(item)}
-                                        className="flex items-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-all transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-indigo-500/50"
-                                    >
-                                        <RefreshCw size={16} />
-                                        Re-run
-                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                router.push(`/results/${item._id}`);
+                                            }}
+                                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+                                        >
+                                            View Results
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}

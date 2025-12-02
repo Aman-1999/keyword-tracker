@@ -6,7 +6,7 @@ import LocationAutocomplete from '@/components/LocationAutocomplete';
 import {
     Search, Loader2, AlertCircle, CheckCircle, Globe, TrendingUp,
     ChevronDown, ChevronUp, Settings, Smartphone, Monitor, Tablet,
-    Languages, Layers, Globe2, ShieldAlert, History
+    Languages, History
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -71,9 +71,6 @@ export default function Dashboard() {
         language: 'en',
         device: 'desktop',
         os: 'windows',
-        depth: 100,
-        max_crawl_pages: 1,
-        stop_crawl_on_match: true,
     });
 
     // Helper to clean domain
@@ -137,18 +134,15 @@ export default function Dashboard() {
                 throw new Error(data.error || 'Failed to fetch rankings');
             }
 
-            setResults(data.results);
-
-            // Update tokens if returned in response
-            if (typeof data.tokensRemaining === 'number') {
-                setTokens(data.tokensRemaining);
-            } else if (tokens !== null) {
-                // Fallback: manually decrement if not returned
-                setTokens(tokens - 1);
+            // Redirect to results page
+            if (data.historyId) {
+                window.location.href = `/results/${data.historyId}`;
+            } else {
+                throw new Error('No History ID returned from server');
             }
+
         } catch (err: any) {
             setError(err.message || 'An error occurred');
-        } finally {
             setLoading(false);
         }
     };
@@ -167,8 +161,8 @@ export default function Dashboard() {
                     {/* Token Display */}
                     {tokens !== null && (
                         <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${tokens > 0
-                                ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                                : 'bg-red-50 border-red-200 text-red-700'
+                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                            : 'bg-red-50 border-red-200 text-red-700'
                             }`}>
                             <div className={`w-2 h-2 rounded-full ${tokens > 0 ? 'bg-indigo-500' : 'bg-red-500'}`} />
                             <span className="font-bold">{tokens}</span>
@@ -183,16 +177,11 @@ export default function Dashboard() {
                     <div className="mb-6 pb-6 border-b border-gray-100">
                         <div className="flex items-center justify-between mb-3">
                             <h3 className="text-sm font-semibold text-gray-700">Search Mode</h3>
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <span className={mode === 'regular' ? 'font-semibold text-indigo-600' : ''}>
-                                    {mode === 'regular' ? '⚡ Fast & Simple' : '🔬 Detailed Analysis'}
-                                </span>
-                            </div>
+
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <button
                                 type="button"
-                                onClick={() => setMode('regular')}
                                 className={`p-4 rounded-xl border-2 transition-all ${mode === 'regular'
                                     ? 'bg-indigo-50 border-indigo-500 shadow-md'
                                     : 'bg-gray-50 border-gray-200 hover:border-indigo-300'
@@ -201,22 +190,17 @@ export default function Dashboard() {
                                 <div className="flex items-center gap-3">
                                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${mode === 'regular' ? 'border-indigo-500' : 'border-gray-300'
                                         }`}>
-                                        {mode === 'regular' && (
-                                            <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
-                                        )}
+                                        <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
                                     </div>
                                     <div className="text-left flex-1">
                                         <div className={`font-semibold text-sm ${mode === 'regular' ? 'text-indigo-700' : 'text-gray-700'
                                             }`}>
                                             Regular
                                         </div>
-                                        <div className="text-xs text-gray-500 mt-0.5">
-                                            Top 20 results • Basic data
-                                        </div>
                                     </div>
                                 </div>
                             </button>
-                            <button
+                            {/* <button
                                 type="button"
                                 onClick={() => setMode('advanced')}
                                 className={`p-4 rounded-xl border-2 transition-all ${mode === 'advanced'
@@ -241,7 +225,7 @@ export default function Dashboard() {
                                         </div>
                                     </div>
                                 </div>
-                            </button>
+                            </button> */}
                         </div>
                     </div>
 
@@ -355,7 +339,6 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        {/* Advanced Options Toggle - Available in Both Modes */}
                         <div className="border-t border-gray-100 pt-6">
                             <button
                                 type="button"
@@ -367,12 +350,9 @@ export default function Dashboard() {
                                 {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                             </button>
                         </div>
-
-                        {/* Advanced Options Panel */}
                         {showAdvanced && (
                             <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300 shadow-inner">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                                    {/* Device Selection */}
                                     <div className="space-y-3">
                                         <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                                             <Monitor className="h-4 w-4 text-indigo-500" />
@@ -399,8 +379,6 @@ export default function Dashboard() {
                                             ))}
                                         </div>
                                     </div>
-
-                                    {/* OS Selection */}
                                     <div className="space-y-3">
                                         <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                                             <Settings className="h-4 w-4 text-indigo-500" />
@@ -418,7 +396,6 @@ export default function Dashboard() {
                                         </select>
                                     </div>
 
-                                    {/* Language Selection */}
                                     <div className="space-y-3">
                                         <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                                             <Languages className="h-4 w-4 text-indigo-500" />
@@ -436,73 +413,7 @@ export default function Dashboard() {
                                         </select>
                                     </div>
 
-                                    {/* Search Depth */}
-                                    <div className="space-y-3">
-                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <Layers className="h-4 w-4 text-indigo-500" />
-                                            Search Depth
-                                            <span className="text-xs font-normal text-gray-400 ml-auto">1-700</span>
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type="range"
-                                                min="1"
-                                                max="700"
-                                                value={advancedParams.depth}
-                                                onChange={(e) => setAdvancedParams({ ...advancedParams, depth: parseInt(e.target.value) })}
-                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                                            />
-                                            <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                                <span>1</span>
-                                                <span className="font-semibold text-indigo-600">{advancedParams.depth} Results</span>
-                                                <span>700</span>
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    {/* Max Crawl Pages */}
-                                    <div className="space-y-3">
-                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <Globe2 className="h-4 w-4 text-indigo-500" />
-                                            Max Crawl Pages
-                                            <span className="text-xs font-normal text-gray-400 ml-auto">1-10</span>
-                                        </label>
-                                        <div className="relative">
-                                            <input
-                                                type="range"
-                                                min="1"
-                                                max="10"
-                                                value={advancedParams.max_crawl_pages}
-                                                onChange={(e) => setAdvancedParams({ ...advancedParams, max_crawl_pages: parseInt(e.target.value) })}
-                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                                            />
-                                            <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                                <span>1</span>
-                                                <span className="font-semibold text-indigo-600">{advancedParams.max_crawl_pages} Pages</span>
-                                                <span>10</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Stop Crawl Toggle */}
-                                    <div className="space-y-3">
-                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <ShieldAlert className="h-4 w-4 text-indigo-500" />
-                                            Optimization
-                                        </label>
-                                        <div className="flex items-center p-3 bg-white rounded-xl border border-gray-200 shadow-sm">
-                                            <input
-                                                id="stop_crawl"
-                                                type="checkbox"
-                                                checked={advancedParams.stop_crawl_on_match}
-                                                onChange={(e) => setAdvancedParams({ ...advancedParams, stop_crawl_on_match: e.target.checked })}
-                                                className="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
-                                            />
-                                            <label htmlFor="stop_crawl" className="ml-3 block text-sm text-gray-700 cursor-pointer select-none">
-                                                Stop crawl when domain is found
-                                            </label>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         )}
@@ -528,84 +439,10 @@ export default function Dashboard() {
                         </div>
                     </form>
                 </div>
-
-                {/* Error Message */}
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-8 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 shadow-sm">
                         <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
                         <p className="text-red-700 font-medium">{error}</p>
-                    </div>
-                )}
-
-                {/* Results Grid */}
-                {results.length > 0 && (
-                    <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5 text-indigo-600" />
-                                Ranking Results
-                            </h2>
-                            <span className="bg-indigo-100 text-indigo-700 text-sm font-bold px-4 py-1.5 rounded-full shadow-sm">
-                                {results.length} Keywords Analyzed
-                            </span>
-                        </div>
-
-                        <div className="divide-y divide-gray-100">
-                            {results.map((result, index) => (
-                                <div key={index} className="p-6 hover:bg-gray-50/80 transition-colors group">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{result.keyword}</h3>
-                                                {result.rank ? (
-                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
-                                                        <CheckCircle className="w-3 h-3 mr-1.5" />
-                                                        Found
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">
-                                                        Not in top 20
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-gray-500 flex items-center gap-2 truncate max-w-xl">
-                                                <Globe className="w-4 h-4 text-gray-400" />
-                                                <span className="truncate">{result.url || 'URL not found'}</span>
-                                            </p>
-                                        </div>
-
-                                        <div className="text-left sm:text-right bg-gray-50 sm:bg-transparent p-4 sm:p-0 rounded-xl">
-                                            <div className="text-4xl font-black text-indigo-600 tracking-tight">
-                                                {result.rank ? `#${result.rank}` : '-'}
-                                            </div>
-                                            <p className="text-xs font-semibold text-gray-500 mt-1 uppercase tracking-wide">Position</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Advanced Metrics (if available) */}
-                                    {(result.etv || result.search_volume) && (
-                                        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-gray-100">
-                                            <div className="bg-gray-50 rounded-lg p-3">
-                                                <p className="text-xs font-medium text-gray-500 mb-1">Est. Traffic Value</p>
-                                                <p className="font-bold text-gray-900">${result.etv?.toFixed(2) || '0.00'}</p>
-                                            </div>
-                                            <div className="bg-gray-50 rounded-lg p-3">
-                                                <p className="text-xs font-medium text-gray-500 mb-1">CPC</p>
-                                                <p className="font-bold text-gray-900">${result.cpc?.toFixed(2) || '-'}</p>
-                                            </div>
-                                            <div className="bg-gray-50 rounded-lg p-3">
-                                                <p className="text-xs font-medium text-gray-500 mb-1">Search Volume</p>
-                                                <p className="font-bold text-gray-900">{result.search_volume || '-'}</p>
-                                            </div>
-                                            <div className="bg-gray-50 rounded-lg p-3">
-                                                <p className="text-xs font-medium text-gray-500 mb-1">Competition</p>
-                                                <p className="font-bold text-gray-900">{result.competition || '-'}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
                     </div>
                 )}
             </main>

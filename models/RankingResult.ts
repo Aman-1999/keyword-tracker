@@ -26,6 +26,11 @@ const RankingResultSchema = new mongoose.Schema({
         required: true,
         index: true,
     },
+    taskId: {
+        type: String,
+        required: true,
+        index: true,
+    },
 
     // Search Filters
     language: {
@@ -40,6 +45,20 @@ const RankingResultSchema = new mongoose.Schema({
     os: {
         type: String,
         default: 'windows',
+    },
+
+    // Metrics
+    search_volume: {
+        type: Number,
+        default: null,
+    },
+    cpc: {
+        type: Number,
+        default: null,
+    },
+    competition: {
+        type: Number,
+        default: null,
     },
 
     // Basic Ranking Data (Visible to all users)
@@ -187,10 +206,18 @@ const RankingResultSchema = new mongoose.Schema({
     top_domains: [String],
     top_rankers: [{
         rank: Number,
+        rank_absolute: Number,
+        page: Number,
         domain: String,
         url: String,
         title: String,
         description: String,
+        breadcrumb: String,
+        etv: Number,
+        is_featured_snippet: Boolean,
+        is_malicious: Boolean,
+        is_web_story: Boolean,
+        amp_version: Boolean,
     }],
 
     // SERP Metrics

@@ -1,0 +1,141 @@
+/**
+ * Comprehensive list of language codes supported by DataForSEO API
+ * Based on ISO 639-1 standard
+ */
+
+export interface Language {
+    code: string;
+    label: string;
+    nativeName?: string;
+}
+
+export const LANGUAGES: Language[] = [
+    { code: 'en', label: 'English', nativeName: 'English' },
+    { code: 'es', label: 'Spanish', nativeName: 'Español' },
+    { code: 'fr', label: 'French', nativeName: 'Français' },
+    { code: 'de', label: 'German', nativeName: 'Deutsch' },
+    { code: 'it', label: 'Italian', nativeName: 'Italiano' },
+    { code: 'pt', label: 'Portuguese', nativeName: 'Português' },
+    { code: 'ru', label: 'Russian', nativeName: 'Русский' },
+    { code: 'ja', label: 'Japanese', nativeName: '日本語' },
+    { code: 'ko', label: 'Korean', nativeName: '한국어' },
+    { code: 'zh', label: 'Chinese', nativeName: '中文' },
+    { code: 'ar', label: 'Arabic', nativeName: 'العربية' },
+    { code: 'hi', label: 'Hindi', nativeName: 'हिन्दी' },
+    { code: 'bn', label: 'Bengali', nativeName: 'বাংলা' },
+    { code: 'pa', label: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ' },
+    { code: 'te', label: 'Telugu', nativeName: 'తెలుగు' },
+    { code: 'mr', label: 'Marathi', nativeName: 'मराठी' },
+    { code: 'ta', label: 'Tamil', nativeName: 'தமிழ்' },
+    { code: 'tr', label: 'Turkish', nativeName: 'Türkçe' },
+    { code: 'vi', label: 'Vietnamese', nativeName: 'Tiếng Việt' },
+    { code: 'pl', label: 'Polish', nativeName: 'Polski' },
+    { code: 'uk', label: 'Ukrainian', nativeName: 'Українська' },
+    { code: 'nl', label: 'Dutch', nativeName: 'Nederlands' },
+    { code: 'ro', label: 'Romanian', nativeName: 'Română' },
+    { code: 'el', label: 'Greek', nativeName: 'Ελληνικά' },
+    { code: 'cs', label: 'Czech', nativeName: 'Čeština' },
+    { code: 'sv', label: 'Swedish', nativeName: 'Svenska' },
+    { code: 'hu', label: 'Hungarian', nativeName: 'Magyar' },
+    { code: 'fi', label: 'Finnish', nativeName: 'Suomi' },
+    { code: 'no', label: 'Norwegian', nativeName: 'Norsk' },
+    { code: 'da', label: 'Danish', nativeName: 'Dansk' },
+    { code: 'sk', label: 'Slovak', nativeName: 'Slovenčina' },
+    { code: 'bg', label: 'Bulgarian', nativeName: 'Български' },
+    { code: 'hr', label: 'Croatian', nativeName: 'Hrvatski' },
+    { code: 'sr', label: 'Serbian', nativeName: 'Српски' },
+    { code: 'lt', label: 'Lithuanian', nativeName: 'Lietuvių' },
+    { code: 'lv', label: 'Latvian', nativeName: 'Latviešu' },
+    { code: 'et', label: 'Estonian', nativeName: 'Eesti' },
+    { code: 'sl', label: 'Slovenian', nativeName: 'Slovenščina' },
+    { code: 'th', label: 'Thai', nativeName: 'ไทย' },
+    { code: 'id', label: 'Indonesian', nativeName: 'Bahasa Indonesia' },
+    { code: 'ms', label: 'Malay', nativeName: 'Bahasa Melayu' },
+    { code: 'he', label: 'Hebrew', nativeName: 'עברית' },
+    { code: 'fa', label: 'Persian', nativeName: 'فارسی' },
+    { code: 'ur', label: 'Urdu', nativeName: 'اردو' },
+    { code: 'sw', label: 'Swahili', nativeName: 'Kiswahili' },
+    { code: 'af', label: 'Afrikaans', nativeName: 'Afrikaans' },
+    { code: 'sq', label: 'Albanian', nativeName: 'Shqip' },
+    { code: 'am', label: 'Amharic', nativeName: 'አማርኛ' },
+    { code: 'hy', label: 'Armenian', nativeName: 'Հայերեն' },
+    { code: 'az', label: 'Azerbaijani', nativeName: 'Azərbaycan' },
+    { code: 'eu', label: 'Basque', nativeName: 'Euskara' },
+    { code: 'be', label: 'Belarusian', nativeName: 'Беларуская' },
+    { code: 'bs', label: 'Bosnian', nativeName: 'Bosanski' },
+    { code: 'ca', label: 'Catalan', nativeName: 'Català' },
+    { code: 'ceb', label: 'Cebuano', nativeName: 'Cebuano' },
+    { code: 'ny', label: 'Chichewa', nativeName: 'Chichewa' },
+    { code: 'co', label: 'Corsican', nativeName: 'Corsu' },
+    { code: 'eo', label: 'Esperanto', nativeName: 'Esperanto' },
+    { code: 'tl', label: 'Filipino', nativeName: 'Filipino' },
+    { code: 'fy', label: 'Frisian', nativeName: 'Frysk' },
+    { code: 'gl', label: 'Galician', nativeName: 'Galego' },
+    { code: 'ka', label: 'Georgian', nativeName: 'ქართული' },
+    { code: 'gu', label: 'Gujarati', nativeName: 'ગુજરાતી' },
+    { code: 'ht', label: 'Haitian Creole', nativeName: 'Kreyòl Ayisyen' },
+    { code: 'ha', label: 'Hausa', nativeName: 'Hausa' },
+    { code: 'haw', label: 'Hawaiian', nativeName: 'ʻŌlelo Hawaiʻi' },
+    { code: 'hmn', label: 'Hmong', nativeName: 'Hmong' },
+    { code: 'is', label: 'Icelandic', nativeName: 'Íslenska' },
+    { code: 'ig', label: 'Igbo', nativeName: 'Igbo' },
+    { code: 'ga', label: 'Irish', nativeName: 'Gaeilge' },
+    { code: 'jw', label: 'Javanese', nativeName: 'Basa Jawa' },
+    { code: 'kn', label: 'Kannada', nativeName: 'ಕನ್ನಡ' },
+    { code: 'kk', label: 'Kazakh', nativeName: 'Қазақ' },
+    { code: 'km', label: 'Khmer', nativeName: 'ខ្មែរ' },
+    { code: 'ku', label: 'Kurdish', nativeName: 'Kurdî' },
+    { code: 'ky', label: 'Kyrgyz', nativeName: 'Кыргызча' },
+    { code: 'lo', label: 'Lao', nativeName: 'ລາວ' },
+    { code: 'la', label: 'Latin', nativeName: 'Latina' },
+    { code: 'lb', label: 'Luxembourgish', nativeName: 'Lëtzebuergesch' },
+    { code: 'mk', label: 'Macedonian', nativeName: 'Македонски' },
+    { code: 'mg', label: 'Malagasy', nativeName: 'Malagasy' },
+    { code: 'ml', label: 'Malayalam', nativeName: 'മലയാളം' },
+    { code: 'mt', label: 'Maltese', nativeName: 'Malti' },
+    { code: 'mi', label: 'Maori', nativeName: 'Māori' },
+    { code: 'mn', label: 'Mongolian', nativeName: 'Монгол' },
+    { code: 'my', label: 'Myanmar (Burmese)', nativeName: 'မြန်မာ' },
+    { code: 'ne', label: 'Nepali', nativeName: 'नेपाली' },
+    { code: 'ps', label: 'Pashto', nativeName: 'پښتو' },
+    { code: 'sm', label: 'Samoan', nativeName: 'Gagana Samoa' },
+    { code: 'gd', label: 'Scots Gaelic', nativeName: 'Gàidhlig' },
+    { code: 'st', label: 'Sesotho', nativeName: 'Sesotho' },
+    { code: 'sn', label: 'Shona', nativeName: 'Shona' },
+    { code: 'sd', label: 'Sindhi', nativeName: 'سنڌي' },
+    { code: 'si', label: 'Sinhala', nativeName: 'සිංහල' },
+    { code: 'so', label: 'Somali', nativeName: 'Soomaali' },
+    { code: 'su', label: 'Sundanese', nativeName: 'Basa Sunda' },
+    { code: 'tg', label: 'Tajik', nativeName: 'Тоҷикӣ' },
+    { code: 'tt', label: 'Tatar', nativeName: 'Татар' },
+    { code: 'tk', label: 'Turkmen', nativeName: 'Türkmen' },
+    { code: 'ug', label: 'Uyghur', nativeName: 'ئۇيغۇر' },
+    { code: 'uz', label: 'Uzbek', nativeName: 'Oʻzbek' },
+    { code: 'cy', label: 'Welsh', nativeName: 'Cymraeg' },
+    { code: 'xh', label: 'Xhosa', nativeName: 'isiXhosa' },
+    { code: 'yi', label: 'Yiddish', nativeName: 'ייִדיש' },
+    { code: 'yo', label: 'Yoruba', nativeName: 'Yorùbá' },
+    { code: 'zu', label: 'Zulu', nativeName: 'isiZulu' },
+];
+
+/**
+ * Get language label by code
+ */
+export function getLanguageLabel(code: string): string {
+    const language = LANGUAGES.find(lang => lang.code === code);
+    return language ? language.label : code.toUpperCase();
+}
+
+/**
+ * Get language by code
+ */
+export function getLanguage(code: string): Language | undefined {
+    return LANGUAGES.find(lang => lang.code === code);
+}
+
+/**
+ * Check if language code is valid
+ */
+export function isValidLanguageCode(code: string): boolean {
+    return LANGUAGES.some(lang => lang.code === code);
+}

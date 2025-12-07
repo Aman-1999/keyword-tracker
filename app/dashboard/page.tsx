@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
+import LanguageSelect from '@/components/LanguageSelect';
+import OSSelect from '@/components/OSSelect';
 import {
     Search, Loader2, AlertCircle, CheckCircle, Globe, TrendingUp,
     ChevronDown, ChevronUp, Settings, Smartphone, Monitor, Tablet,
-    Languages, History
+    History
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -380,37 +382,23 @@ export default function Dashboard() {
                                         </div>
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <Settings className="h-4 w-4 text-indigo-500" />
+                                        <label className="text-sm font-semibold text-gray-700">
                                             Operating System
                                         </label>
-                                        <select
+                                        <OSSelect
                                             value={advancedParams.os}
-                                            onChange={(e) => setAdvancedParams({ ...advancedParams, os: e.target.value })}
-                                            className="block w-full rounded-xl border-gray-200 bg-white p-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500 shadow-sm hover:border-indigo-300 transition-colors"
-                                        >
-                                            <option value="windows">Windows</option>
-                                            <option value="macos">macOS</option>
-                                            <option value="android">Android</option>
-                                            <option value="ios">iOS</option>
-                                        </select>
+                                            onChange={(os) => setAdvancedParams({ ...advancedParams, os })}
+                                        />
                                     </div>
 
                                     <div className="space-y-3">
-                                        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                                            <Languages className="h-4 w-4 text-indigo-500" />
+                                        <label className="text-sm font-semibold text-gray-700">
                                             Language
                                         </label>
-                                        <select
+                                        <LanguageSelect
                                             value={advancedParams.language}
-                                            onChange={(e) => setAdvancedParams({ ...advancedParams, language: e.target.value })}
-                                            className="block w-full rounded-xl border-gray-200 bg-white p-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500 shadow-sm hover:border-indigo-300 transition-colors"
-                                        >
-                                            <option value="en">English</option>
-                                            <option value="es">Spanish</option>
-                                            <option value="fr">French</option>
-                                            <option value="de">German</option>
-                                        </select>
+                                            onChange={(languageCode) => setAdvancedParams({ ...advancedParams, language: languageCode })}
+                                        />
                                     </div>
 
 

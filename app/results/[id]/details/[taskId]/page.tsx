@@ -141,7 +141,7 @@ export default function ResultDetailsPage() {
 
                 <div className="space-y-6">
                     {items.length > 0 && <DomainOverview items={items} userDomain={userDomain} />}
-                    <RefinementChips chips={result.refinement_chips} />
+                    {/* <RefinementChips chips={result.refinement_chips} /> */}
                     {aiOverview.length > 0 && <AIOverview items={aiOverview} />}
                     {localPack.length > 0 && <LocalPack items={localPack} />}
                     {peopleAlsoAsk.length > 0 && <PeopleAlsoAsk items={peopleAlsoAsk} />}

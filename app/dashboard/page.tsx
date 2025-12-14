@@ -231,6 +231,7 @@ export default function Dashboard() {
                                     <input
                                         type="text"
                                         id="domain"
+                                        autoComplete="off"
                                         required
                                         placeholder="example.com"
                                         value={domain}

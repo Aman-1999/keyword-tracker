@@ -42,8 +42,10 @@ export default function ResultDetailsPage() {
                 const historyRes = await fetch(`/api/check-rank/results/${historyId}`);
                 if (historyRes.ok) {
                     const historyData = await historyRes.json();
-                    if (historyData.history && historyData.history.domain) {
-                        setUserDomain(historyData.history.domain);
+                    // Handle both response structures (direct domain or nested in history object)
+                    const fetchedDomain = historyData.domain || (historyData.history && historyData.history.domain);
+                    if (fetchedDomain) {
+                        setUserDomain(fetchedDomain);
                     }
                 }
             } catch (err: any) {
@@ -118,6 +120,8 @@ export default function ResultDetailsPage() {
                 <ResultHeader
                     historyId={historyId}
                     keyword={result.keyword}
+                    domain={userDomain}
+                    rank={targetRanking?.rank_group || null}
                     language_code={result.language_code}
                     location_code={result.location_code}
                     location_name={result.location_name}

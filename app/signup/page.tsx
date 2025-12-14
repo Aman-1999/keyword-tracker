@@ -4,9 +4,12 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, TrendingUp, ArrowRight, Mail, Lock, User, Check, BarChart3, Globe, Shield } from 'lucide-react';
+import { useAppDispatch } from '@/store/hooks';
+import { setUser } from '@/store/slices/authSlice';
 
 export default function Signup() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
@@ -35,6 +38,9 @@ export default function Signup() {
             if (!res.ok) {
                 throw new Error(data.error || 'Signup failed');
             }
+
+            // Update Redux state
+            dispatch(setUser(data.user));
 
             // Redirect to dashboard after successful signup
             router.push('/dashboard');

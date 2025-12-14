@@ -97,6 +97,7 @@ export default function LocationAutocomplete({ value, onChange, onSelect }: Prop
                 <MapPin className="absolute left-3 top-3.5 h-5 w-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
                 <input
                     type="text"
+                    autoComplete="off"
                     value={query}
                     onChange={(e) => {
                         shouldSearchRef.current = true; // Mark as typing interaction

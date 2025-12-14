@@ -34,7 +34,11 @@ export async function GET(
 
         if (masterResult) {
             // Return the 'data' field which contains the raw DataForSEO response
-            return NextResponse.json(masterResult.data);
+            // Inject domain from MasterSERP metadata if available
+            return NextResponse.json({
+                ...masterResult.data,
+                domain: masterResult.domain || masterResult.data.domain
+            });
         }
 
         // If not in MasterSERP, try to fetch fresh from DataForSEO

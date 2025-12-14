@@ -12,7 +12,7 @@ export default function PeopleAlsoAsk({ items }: PeopleAlsoAskProps) {
     const questions = items.flatMap((paa: any) => paa.items || []);
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
+        <div id="people-also-ask" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden scroll-mt-24">
             <div className="px-6 py-4 bg-gradient-to-r from-amber-50 to-white border-b border-amber-100 flex items-center gap-2">
                 <div className="p-1.5 bg-amber-100 rounded-lg">
                     <HelpCircle className="h-5 w-5 text-amber-600" />

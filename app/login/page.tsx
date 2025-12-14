@@ -4,9 +4,12 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, TrendingUp, ArrowRight, Mail, Lock, BarChart3, Zap, Shield, Check } from 'lucide-react';
+import { useAppDispatch } from '@/store/hooks';
+import { setUser } from '@/store/slices/authSlice';
 
 export default function Login() {
     const router = useRouter();
+    const dispatch = useAppDispatch();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [formData, setFormData] = useState({
@@ -34,6 +37,9 @@ export default function Login() {
             if (!res.ok) {
                 throw new Error(data.error || 'Login failed');
             }
+
+            // Update Redux state
+            dispatch(setUser(data.user));
 
             // Redirect based on role
             if (data.user.role === 'admin') {

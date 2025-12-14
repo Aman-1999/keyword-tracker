@@ -8,7 +8,7 @@ export default function RefinementChips({ chips }: RefinementChipsProps) {
     if (!chips || !chips.items || chips.items.length === 0) return null;
 
     return (
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div id="refinement-chips" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden scroll-mt-24">
             {chips.items.map((chip: any, i: number) => (
                 <a
                     key={i}

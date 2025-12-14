@@ -97,7 +97,6 @@ export async function getBatchTaskResults(
             });
 
             const chunkResults = await Promise.all(promises);
-            console.log('Chunk results:', JSON.stringify(chunkResults, null, 2));
             chunkResults.forEach(({ taskId, result }) => {
                 if (result.success) {
                     results.set(taskId, result.data);

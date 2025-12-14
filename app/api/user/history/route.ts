@@ -90,154 +90,205 @@ export async function GET(request: Request) {
             .sort(sort)
             .skip(skip)
             .limit(limit);
-
-        // Fetch location names and transform data based on viewMode
+        // Fetch location models
         const Location = (await import('@/models/Location')).default;
         const MasterSERP = (await import('@/models/MasterSERP')).default;
 
         let enrichedHistory;
+        let pagination;
 
         if (viewMode === 'keywords') {
-            // Flatten to keyword-level data with ranking details
-            const keywordData = [];
-            const RankingResult = (await import('@/models/RankingResult')).default;
+            // Aggregation Pipeline for Keyword view
+            const pipeline: any[] = [
+                // 1. Initial Match (Search Filters)
+                { $match: query },
 
-            for (const item of history) {
-                // Fetch location name
-                let locationName = item.location;
-                if ((!locationName || locationName === 'Unknown') && item.location_code) {
-                    try {
-                        const locationDoc = await Location.findOne({ location_code: item.location_code });
-                        if (locationDoc) {
-                            locationName = locationDoc.location_name;
-                        }
-                    } catch (err) {
-                        console.error('Failed to fetch location for code:', item.location_code, err);
+                // 2. Project fields needed for unwind
+                {
+                    $project: {
+                        userId: 1,
+                        domain: 1,
+                        location_code: 1,
+                        location: 1,
+                        createdAt: 1,
+                        keywords: 1,
+                        taskIds: 1
                     }
-                }
+                },
 
-                // Fetch ranking data for each keyword
-                const keywords = item.keywords || [];
-                const taskIds = item.taskIds || [];
-
-                for (let i = 0; i < keywords.length; i++) {
-                    const keyword = keywords[i];
-                    const taskId = taskIds[i];
-
-                    let rankingData: any = {
-                        _id: `${item._id}-${i}`,
-                        searchId: item._id,
-                        domain: item.domain,
-                        keyword,
-                        location: locationName || 'Unknown',
-                        location_code: item.location_code,
-                        createdAt: item.createdAt,
-                        taskId,
-                        rank: null,
-                        landingUrl: null,
-                        totalResults: null,
-                        hasPAA: false,
-                        hasAIOverview: false,
-                        totalItems: 0,
-                        search_volume: null,
-                        cpc: null,
-                        competition: null,
-                        title: null,
-                        description: null,
-                        metadata: {}
-                    };
-
-                    // Try to fetch detailed ranking data from RankingResult
-                    try {
-                        const resultDoc: any = await RankingResult.findOne({ taskId }).lean();
-
-                        if (resultDoc) {
-                            rankingData.rank = resultDoc.rank;
-                            rankingData.landingUrl = resultDoc.url;
-                            rankingData.totalResults = resultDoc.se_results_count;
-                            rankingData.totalItems = resultDoc.items_count;
-
-                            // Metrics
-                            rankingData.search_volume = resultDoc.search_volume;
-                            rankingData.cpc = resultDoc.cpc;
-                            rankingData.competition = resultDoc.competition;
-
-                            // Content
-                            rankingData.title = resultDoc.title;
-                            rankingData.description = resultDoc.description;
-
-                            // Features
-                            const itemTypes = resultDoc.item_types || [];
-                            rankingData.hasPAA = resultDoc.isPeopleAlsoAsk ?? ((resultDoc.people_also_ask && resultDoc.people_also_ask.length > 0) || itemTypes.includes('people_also_ask'));
-                            rankingData.hasAIOverview = resultDoc.isAiOverview ?? ((resultDoc.ai_overview && resultDoc.ai_overview.length > 0) || itemTypes.includes('ai_overview'));
-                            rankingData.serpItemTypes = itemTypes;
-
-                            // Feature Counts & Details
-                            rankingData.featureCounts = {
-                                paa: resultDoc.people_also_ask?.length || 0,
-                                aiOverview: resultDoc.ai_overview?.length || 0,
-                                relatedSearches: resultDoc.related_searches?.length || 0,
-                                refinementChips: resultDoc.refinement_chips?.length || 0,
-                                topRankers: resultDoc.top_rankers?.length || 0
-                            };
-
-                            // Extended Data
-                            rankingData.refinementChips = resultDoc.refinement_chips || [];
-                            rankingData.relatedSearches = resultDoc.related_searches || [];
-
-                            // Additional metadata
-                            rankingData.metadata = {
-                                language: resultDoc.language,
-                                device: resultDoc.device,
-                                os: resultDoc.os,
-                                checkType: resultDoc.check_url ? 'url' : 'regular'
-                            };
-                        } else {
-                            // Fallback to MasterSERP if RankingResult not found (backward compatibility)
-                            const masterData = await MasterSERP.findOne({ taskId }).lean();
-                            if (masterData && masterData.data) {
-                                const serpData = masterData.data;
-
-                                if (serpData.items && Array.isArray(serpData.items)) {
-                                    rankingData.totalItems = serpData.items.length;
-                                    rankingData.hasPAA = serpData.items.some((item: any) => item.type === 'people_also_ask');
-                                    rankingData.hasAIOverview = serpData.items.some((item: any) => item.type === 'ai_overview');
-
-                                    const domainPattern = item.domain.replace('www.', '').toLowerCase();
-                                    const organicResults = serpData.items.filter((item: any) => item.type === 'organic');
-                                    const userResult = organicResults.find((result: any) =>
-                                        result.url && result.url.toLowerCase().includes(domainPattern)
-                                    );
-
-                                    if (userResult) {
-                                        rankingData.rank = userResult.rank_absolute || userResult.rank_group;
-                                        rankingData.landingUrl = userResult.url;
-                                        rankingData.title = userResult.title;
-                                        rankingData.description = userResult.description;
-                                    }
+                // 3. Unwind keywords and taskIds in sync
+                {
+                    $addFields: {
+                        results: {
+                            $map: {
+                                input: { $range: [0, { $size: "$keywords" }] },
+                                as: "index",
+                                in: {
+                                    keyword: { $arrayElemAt: ["$keywords", "$$index"] },
+                                    taskId: { $arrayElemAt: ["$taskIds", "$$index"] }
                                 }
-                                if (serpData.se_results_count) {
-                                    rankingData.totalResults = serpData.se_results_count;
-                                }
-                                rankingData.metadata = {
-                                    language: serpData.language_code,
-                                    device: serpData.device,
-                                    os: serpData.os,
-                                    checkType: serpData.check_url ? 'url' : 'regular'
-                                };
                             }
                         }
-                    } catch (err) {
-                        console.error(`Failed to fetch ranking data for task ${taskId}:`, err);
                     }
+                },
+                { $unwind: "$results" },
 
-                    keywordData.push(rankingData);
+                // 4. Flatten structure
+                {
+                    $addFields: {
+                        keyword: "$results.keyword",
+                        taskId: "$results.taskId",
+                        _parentId: "$_id"
+                    }
+                },
+
+                // 5. Keyword Filter (if applied)
+                ...(keyword ? [{ $match: { keyword: { $regex: keyword, $options: 'i' } } }] : []),
+                ...(search ? [{
+                    $match: {
+                        $or: [
+                            { domain: { $regex: search, $options: 'i' } },
+                            { keyword: { $regex: search, $options: 'i' } }
+                        ]
+                    }
+                }] : []),
+
+                // 6. Sort
+                { $sort: sort },
+
+                // 7. Facet for Pagination & Data
+                {
+                    $facet: {
+                        metadata: [{ $count: "total" }],
+                        data: [
+                            { $skip: skip },
+                            { $limit: limit },
+
+                            // 8. Lookup Ranking Result
+                            {
+                                $lookup: {
+                                    from: "rankingresults",
+                                    localField: "taskId",
+                                    foreignField: "taskId",
+                                    as: "rankingData"
+                                }
+                            },
+                            {
+                                $unwind: {
+                                    path: "$rankingData",
+                                    preserveNullAndEmptyArrays: true
+                                }
+                            },
+
+                            // 9. Lookup Location
+                            {
+                                $lookup: {
+                                    from: "locations",
+                                    localField: "location_code",
+                                    foreignField: "location_code",
+                                    as: "locationData"
+                                }
+                            },
+                            {
+                                $unwind: {
+                                    path: "$locationData",
+                                    preserveNullAndEmptyArrays: true
+                                }
+                            },
+
+                            // 10. Format Output
+                            {
+                                $project: {
+                                    _id: { $concat: [{ $toString: "$_parentId" }, "-", { $toString: "$taskId" }] },
+                                    searchId: "$_parentId",
+                                    domain: 1,
+                                    keyword: 1,
+                                    location: { $ifNull: ["$locationData.location_name", "$location"] },
+                                    location_code: 1,
+                                    createdAt: 1,
+                                    taskId: 1,
+
+                                    // Ranking Data
+                                    rank: "$rankingData.rank",
+                                    landingUrl: "$rankingData.url",
+                                    totalResults: "$rankingData.se_results_count",
+                                    totalItems: "$rankingData.items_count",
+                                    search_volume: "$rankingData.search_volume",
+                                    cpc: "$rankingData.cpc",
+                                    competition: "$rankingData.competition",
+                                    title: "$rankingData.title",
+                                    description: "$rankingData.description",
+
+                                    // Features logic
+                                    hasPAA: {
+                                        $or: [
+                                            "$rankingData.isPeopleAlsoAsk",
+                                            { $gt: [{ $size: { $ifNull: ["$rankingData.people_also_ask", []] } }, 0] }
+                                        ]
+                                    },
+                                    hasAIOverview: {
+                                        $or: [
+                                            "$rankingData.isAiOverview",
+                                            { $gt: [{ $size: { $ifNull: ["$rankingData.ai_overview", []] } }, 0] }
+                                        ]
+                                    },
+                                    featureCounts: {
+                                        paa: { $size: { $ifNull: ["$rankingData.people_also_ask", []] } },
+                                        aiOverview: { $size: { $ifNull: ["$rankingData.ai_overview", []] } },
+                                        relatedSearches: { $size: { $ifNull: ["$rankingData.related_searches", []] } },
+                                        refinementChips: { $size: { $ifNull: ["$rankingData.refinement_chips", []] } },
+                                        topRankers: { $size: { $ifNull: ["$rankingData.top_rankers", []] } }
+                                    },
+                                    metadata: {
+                                        language: "$rankingData.language",
+                                        device: "$rankingData.device",
+                                        os: "$rankingData.os",
+                                        checkType: { $cond: [{ $ifNull: ["$rankingData.check_url", false] }, 'url', 'regular'] }
+                                    }
+                                }
+                            }
+                        ]
+                    }
                 }
-            }
+            ];
 
-            enrichedHistory = keywordData;
+            const aggregationResult = await SearchHistory.aggregate(pipeline);
+
+            const result = aggregationResult[0];
+            const totalKeywords = result.metadata[0]?.total || 0;
+            enrichedHistory = result.data;
+            const computedTotalPages = Math.ceil(totalKeywords / limit);
+
+            // Build pagination for keywords mode
+            pagination = {
+                page,
+                limit,
+                pageSize: limit,
+                currentPage: page,
+                total: totalKeywords,
+                totalCount: totalKeywords,
+                totalPages: computedTotalPages,
+                hasNext: page < computedTotalPages,
+                hasPrev: page > 1,
+                from: skip + 1,
+                to: Math.min(skip + limit, totalKeywords)
+            };
+
         } else {
             // Grouped by search (original format)
+            // Get total count for grouped mode
+            const total = await SearchHistory.countDocuments(query);
+
+            // Calculate pagination for grouped mode
+            const skip = (page - 1) * limit;
+            const totalPages = Math.ceil(total / limit);
+
+            // Fetch history with pagination for grouped mode
+            const history = await SearchHistory.find(query)
+                .sort(sort)
+                .skip(skip)
+                .limit(limit);
+
             enrichedHistory = await Promise.all(
                 history.map(async (item) => {
                     let locationName = item.location;
@@ -260,37 +311,34 @@ export async function GET(request: Request) {
                     };
                 })
             );
-        }
 
-        // Build pagination metadata
-        const pagination = {
-            page,
-            limit,
-            pageSize: limit, // Alias for limit
-            currentPage: page, // Alias for page
-            total,
-            totalCount: total, // Alias for total
-            totalPages,
-            hasNext: page < totalPages,
-            hasPrev: page > 1,
-            from: skip + 1,
-            to: Math.min(skip + limit, total)
-        };
-
-        return NextResponse.json({
-            history: enrichedHistory,
-            pagination,
-            viewMode,
-            meta: {
-                total,
+            // Build pagination metadata for grouped mode
+            pagination = {
                 page,
                 limit,
-                totalPages
-            }
+                pageSize: limit,
+                currentPage: page,
+                total,
+                totalCount: total,
+                totalPages,
+                hasNext: page < totalPages,
+                hasPrev: page > 1,
+                from: skip + 1,
+                to: Math.min(skip + limit, total)
+            };
+        }
+
+        return NextResponse.json({
+            success: true,
+            history: enrichedHistory,
+            pagination
         });
 
-    } catch (error) {
-        console.error('Fetch history error:', error);
-        return NextResponse.json({ history: [], pagination: null }, { status: 500 });
+    } catch (error: any) {
+        console.error('Get user history error:', error);
+        return NextResponse.json(
+            { error: error.message || 'Internal server error' },
+            { status: 500 }
+        );
     }
 }

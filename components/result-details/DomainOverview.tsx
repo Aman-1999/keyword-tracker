@@ -71,7 +71,7 @@ export default function DomainOverview({ items, userDomain }: DomainOverviewProp
 
     // Determine Best Rank (lowest rank_absolute is best)
     const bestOrganic = appearances.organic.sort((a, b) => (a.rank_absolute || 999) - (b.rank_absolute || 999))[0];
-    const bestRank = bestOrganic ? (bestOrganic.rank_absolute || bestOrganic.rank_group) : null;
+    const bestRank = bestOrganic ? (bestOrganic.rank_group || bestOrganic.rank_absolute) : null;
 
     return (
         <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 rounded-2xl shadow-xl text-white overflow-hidden mb-8">
@@ -140,7 +140,7 @@ export default function DomainOverview({ items, userDomain }: DomainOverviewProp
                                         </div>
                                         <div className="flex flex-col items-end gap-2 flex-shrink-0">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-sm font-bold bg-green-500/20 text-green-300 border border-green-500/30">
-                                                Rank #{item.rank_absolute || item.rank_group}
+                                                Rank #{item.rank_group || item.rank_absolute}
                                             </span>
                                             {item.etv > 0 && (
                                                 <span className="text-xs text-indigo-300 font-medium">Est. Traffic: {item.etv.toFixed(1)}</span>

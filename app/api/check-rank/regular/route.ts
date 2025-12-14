@@ -43,6 +43,7 @@ export async function POST(request: Request) {
             );
         }
 
+        /* Deprecated check - now checking against dynamic cost later
         if (user.requestTokens <= 0) {
             return NextResponse.json(
                 {
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
                 { status: 403 }
             );
         }
+        */
 
         const {
             domain,
@@ -84,6 +86,32 @@ export async function POST(request: Request) {
             );
         }
 
+        // Sanitize keywords (remove empty lines)
+        const sanitizedKeywords = keywords
+            .map((k: string) => k.trim())
+            .filter((k: string) => k.length > 0);
+
+        if (sanitizedKeywords.length === 0) {
+            return NextResponse.json(
+                { error: 'At least one valid keyword is required.' },
+                { status: 400 }
+            );
+        }
+
+        // Calculate cost (1 token per keyword)
+        const cost = sanitizedKeywords.length;
+
+        if (user.requestTokens < cost) {
+            return NextResponse.json(
+                {
+                    error: `Insufficient tokens. You have ${user.requestTokens} tokens but this request costs ${cost}.`,
+                    tokensRemaining: user.requestTokens,
+                    cost
+                },
+                { status: 403 }
+            );
+        }
+
         // Default filters
         const searchFilters = {
             language: filters?.language || 'en',
@@ -92,18 +120,9 @@ export async function POST(request: Request) {
         };
 
         const finalLocationCode = location_code || (location_name ? null : 2840);
-
-        console.log('📍 Location Debug:', {
-            location,
-            location_name,
-            location_code,
-            finalLocationCode
-        });
-
-        // Submit tasks using task_post API
         const taskResult = await submitDomainRankingTasks(
             domain,
-            keywords,
+            sanitizedKeywords,
             {
                 location_code: finalLocationCode,
                 location_name,
@@ -122,12 +141,7 @@ export async function POST(request: Request) {
                 { status: 500 }
             );
         }
-
-        // Extract task IDs
         const taskIds = taskResult.data.map(t => t.taskId);
-        console.log(taskResult);
-
-        // Fetch location name from database if not provided
         let finalLocationName = location_name || location;
         if (!finalLocationName && finalLocationCode) {
             try {
@@ -147,13 +161,13 @@ export async function POST(request: Request) {
             domain,
             location: finalLocationName || 'Unknown',
             location_code: finalLocationCode || 0,
-            keywords,
+            keywords: sanitizedKeywords,
             filters: searchFilters,
             taskIds,
         });
 
-        // Deduct one token from user's account
-        user.requestTokens -= 1;
+        // Deduct tokens from user's account
+        user.requestTokens -= cost;
         await user.save();
 
         console.log(`User ${userId} submitted ${keywords.length} tasks. History ID: ${history._id}`);

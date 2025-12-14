@@ -36,13 +36,10 @@ export default function DetailedResultsTable({ results }: DetailedResultsProps) 
                                 PAA
                             </th>
                             <th scope="col" className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-24">
-                                !
+                                Feature Snippet
                             </th>
                             <th scope="col" className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-20" title="Related Searches">
                                 Related
-                            </th>
-                            <th scope="col" className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-20" title="Refinement Chips">
-                                Chips
                             </th>
                             <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-32">
                                 Total Results
@@ -113,9 +110,6 @@ export default function DetailedResultsTable({ results }: DetailedResultsProps) 
                                 {/* Related & Chips Counts */}
                                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-600">
                                     {result.featureCounts?.relatedSearches ? result.featureCounts.relatedSearches : '-'}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-600">
-                                    {result.featureCounts?.refinementChips ? result.featureCounts.refinementChips : '-'}
                                 </td>
 
                                 <td className="px-6 py-4 whitespace-nowrap text-right">

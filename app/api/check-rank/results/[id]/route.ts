@@ -38,20 +38,16 @@ export async function GET(
         });
 
         if (!history) {
-            console.log(`History not found: ${historyId}`);
             return NextResponse.json({ error: 'History not found' }, { status: 404 });
         }
 
         if (!history.taskIds || history.taskIds.length === 0) {
-            console.log(`History ${historyId} has no taskIds`);
             return NextResponse.json({
                 success: true,
                 status: 'completed',
                 results: []
             });
         }
-
-        console.log(`Fetching results for ${history.taskIds.length} tasks:`, history.taskIds);
 
         // 1. Check Database for existing results
         const existingResults = await RankingResult.find({
@@ -61,8 +57,6 @@ export async function GET(
         const existingTaskIds = new Set(existingResults.map((r: any) => r.taskId));
         const missingTaskIds = history.taskIds.filter(id => !existingTaskIds.has(id));
 
-        console.log(`Found ${existingResults.length} cached results. Missing ${missingTaskIds.length} tasks.`);
-
         const resultsMap = new Map();
 
         // Add existing results to map
@@ -70,8 +64,6 @@ export async function GET(
             resultsMap.set(result.taskId, {
                 taskId: result.taskId,
                 keyword: result.keyword,
-
-                // User's Domain Ranking
                 rank: result.rank,
                 rank_group: result.rank_group,
                 rank_absolute: result.rank_absolute,
@@ -83,44 +75,29 @@ export async function GET(
                 breadcrumb: result.breadcrumb,
                 etv: result.etv,
                 xpath: result.xpath,
-
-                // Keyword Metrics
                 search_volume: result.search_volume,
                 cpc: result.cpc,
                 competition: result.competition,
-
-                // SERP Metadata
                 se_results_count: result.se_results_count,
                 items_count: result.items_count,
                 item_types: result.item_types,
                 serp_item_types: result.serp_item_types,
                 check_url: result.check_url,
-
-                // AI Overview
                 ai_overview: result.ai_overview,
                 isAiOverview: result.isAiOverview ?? (result.item_types || []).includes('ai_overview'),
                 isPeopleAlsoAsk: result.isPeopleAlsoAsk ?? (result.item_types || []).includes('people_also_ask'),
-
-                // SERP Features
                 is_featured_snippet: result.is_featured_snippet,
                 is_malicious: result.is_malicious,
                 is_web_story: result.is_web_story,
                 amp_version: result.amp_version,
-
-                // Content
                 highlighted: result.highlighted,
                 links: result.links,
                 faq: result.faq,
                 extended_snippet: result.extended_snippet,
-
-                // ALL Organic Results (competitors + user's domain)
                 top_rankers: result.top_rankers,
-
-                // Related Content
                 related_searches: result.related_searches,
                 people_also_ask: result.people_also_ask,
                 refinement_chips: result.refinement_chips,
-
                 featureCounts: {
                     paa: result.people_also_ask?.length || 0,
                     aiOverview: result.ai_overview?.length || 0,
@@ -132,12 +109,7 @@ export async function GET(
                 status: 'completed'
             });
         }
-
-        // 2. Fetch missing tasks (Check MasterSERP first, then DataForSEO)
         if (missingTaskIds.length > 0) {
-            console.log(`Checking MasterSERP for ${missingTaskIds.length} tasks...`);
-
-            // Check MasterSERP
             const masterRecords = await MasterSERP.find({
                 taskId: { $in: missingTaskIds }
             });
@@ -146,41 +118,24 @@ export async function GET(
             masterRecords.forEach((record: any) => {
                 foundInMaster.set(record.taskId, record.data);
             });
-
-            console.log(`Found ${foundInMaster.size} tasks in MasterSERP.`);
-
-            // Identify what is truly missing (not in DB AND not in MasterSERP)
             const trulyMissingTaskIds = missingTaskIds.filter(id => !foundInMaster.has(id));
 
             const finalResultsMap = new Map();
-
-            // Add results found in MasterSERP to processing map
             for (const [taskId, data] of foundInMaster.entries()) {
                 finalResultsMap.set(taskId, data);
             }
 
             // Fetch from DataForSEO if still missing
             if (trulyMissingTaskIds.length > 0) {
-                console.log(`Fetching ${trulyMissingTaskIds.length} tasks from DataForSEO...`);
                 const taskResults = await getBatchTaskResults(trulyMissingTaskIds);
-
                 if (taskResults.success) {
                     const fetchedMap = taskResults.data;
-                    console.log(`Received ${fetchedMap.size} new results from DataForSEO`);
-
                     for (const [taskId, data] of fetchedMap.entries()) {
                         finalResultsMap.set(taskId, data);
-
-                        // SAVE TO MASTER SERP
                         try {
                             const items = data.items || [];
                             const itemTypes = items.map((i: any) => i.type);
                             const cleanDomain = history.domain.replace(/^www\./, '').toLowerCase();
-
-                            // Find rank for this specific user domain in this general SERP
-                            // Note: MasterSERP is general, but we are saving it in context of a user's check.
-                            // Storing *this user's* rank in master might be slightly mixing concerns if multiple users track same keyword,
-                            // but for now it satisfies the user request to "save the domain, keyword, ranks".
                             const userItem = items.find((i: any) =>
                                 i.type === 'organic' &&
                                 i.domain &&
@@ -190,7 +145,6 @@ export async function GET(
                             await MasterSERP.create({
                                 taskId: taskId,
                                 data: data,
-                                // Enhanced Metadata
                                 domain: history.domain,
                                 keyword: data.keyword,
                                 isAiOverview: itemTypes.includes('ai_overview'),
@@ -202,7 +156,6 @@ export async function GET(
                                     url: userItem.url
                                 } : null
                             });
-                            console.log(`Saved task ${taskId} to MasterSERP with metadata`);
                         } catch (err) {
                             console.error(`Failed to save to MasterSERP for ${taskId}:`, err);
                         }
@@ -256,12 +209,6 @@ export async function GET(
                         }
                     }
                 }
-
-                if (!userDomainItem) {
-                    console.log(`Domain "${history.domain}" not found in SERP results for keyword "${result.keyword}"`);
-                }
-
-                // Extract top organic results (ALL of them, not just top 3)
                 const topRankers = items
                     .filter((item: any) => item.type === 'organic')
                     .map((item: any) => ({
@@ -356,48 +303,25 @@ export async function GET(
                         breadcrumb: userDomainItem?.breadcrumb || null,
                         etv: userDomainItem?.etv || null,
                         xpath: userDomainItem?.xpath || null,
-
-                        // SERP Metadata
                         se_results_count: result.se_results_count || 0,
                         items_count: result.items_count || 0,
                         item_types: itemTypes,
                         serp_item_types: itemTypes,
                         check_url: result.check_url || null,
-
-                        // AI Overview
                         ai_overview: aiOverview,
-
-                        // SERP Features (for user's domain if found)
                         is_featured_snippet: userDomainItem?.is_featured_snippet || false,
                         is_malicious: userDomainItem?.is_malicious || false,
                         is_web_story: userDomainItem?.is_web_story || false,
                         amp_version: userDomainItem?.amp_version || false,
-
-                        // Highlighted text (for user's domain if found)
                         highlighted: userDomainItem?.highlighted || [],
-
-                        // Links (for user's domain if found)
                         links: userDomainItem?.links || [],
-
-                        // FAQ (for user's domain if found)
                         faq: userDomainItem?.faq?.items || [],
-
-                        // Extended snippet (for user's domain if found)
                         extended_snippet: userDomainItem?.extended_snippet || null,
-
-                        // ALL Organic Results (competitors + user's domain)
                         top_rankers: topRankers,
-
-                        // Related Searches
                         related_searches: relatedSearches,
-
-                        // People Also Ask
                         people_also_ask: peopleAlsoAsk,
-
-                        // Refinement chips
                         refinement_chips: result.refinement_chips?.items?.map((i: any) => i.title) || [],
                     });
-                    console.log(`Saved result for task ${taskId}`);
                 } catch (err) {
                     console.error(`Failed to save result for task ${taskId}:`, err);
                 }
@@ -406,8 +330,6 @@ export async function GET(
                 resultsMap.set(taskId, {
                     taskId,
                     keyword: result.keyword,
-
-                    // User's Domain Ranking
                     rank: userDomainItem?.rank_group || null,
                     rank_group: userDomainItem?.rank_group || null,
                     rank_absolute: userDomainItem?.rank_absolute || null,
@@ -419,20 +341,14 @@ export async function GET(
                     breadcrumb: userDomainItem?.breadcrumb || null,
                     etv: userDomainItem?.etv || null,
                     xpath: userDomainItem?.xpath || null,
-
-                    // Keyword Metrics
                     search_volume: result.keyword_info?.search_volume,
                     cpc: result.keyword_info?.cpc,
                     competition: result.keyword_info?.competition,
-
-                    // SERP Metadata
                     se_results_count: result.se_results_count || 0,
                     items_count: result.items_count || 0,
                     item_types: itemTypes,
                     serp_item_types: itemTypes,
                     check_url: result.check_url || null,
-
-                    // AI Overview
                     ai_overview: aiOverview,
                     isAiOverview: itemTypes.includes('ai_overview'),
                     isPeopleAlsoAsk: itemTypes.includes('people_also_ask'),
@@ -444,14 +360,10 @@ export async function GET(
                         refinementChips: result.refinement_chips?.items?.length || 0,
                         topRankers: topRankers.length
                     },
-
-                    // SERP Features
                     is_featured_snippet: userDomainItem?.is_featured_snippet || false,
                     is_malicious: userDomainItem?.is_malicious || false,
                     is_web_story: userDomainItem?.is_web_story || false,
                     amp_version: userDomainItem?.amp_version || false,
-
-                    // Content
                     highlighted: userDomainItem?.highlighted || [],
                     links: userDomainItem?.links || [],
                     faq: userDomainItem?.faq?.items || [],

@@ -9,7 +9,7 @@ export default function OrganicResultsList({ items }: OrganicResultsListProps) {
     const topResults = items.slice(0, 10);
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div id="organic-results" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden scroll-mt-24">
             <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 flex justify-between items-center bg-white">
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-gray-100 rounded-lg">
@@ -27,7 +27,7 @@ export default function OrganicResultsList({ items }: OrganicResultsListProps) {
                     <div key={i} className="p-6 hover:bg-gray-50 transition-colors group">
                         <div className="flex gap-4">
                             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 font-bold flex items-center justify-center text-sm">
-                                {item.rank_absolute || item.rank_group}
+                                {i + 1}
                             </div>
 
                             <div className="flex-1 min-w-0 space-y-2">

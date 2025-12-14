@@ -8,7 +8,7 @@ export default function AIOverview({ items }: AIOverviewProps) {
     if (!items || items.length === 0) return null;
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 overflow-hidden mb-6">
+        <div id="ai-overview" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden scroll-mt-24 mb-6">
             <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-white border-b border-indigo-100 flex items-center gap-2">
                 <div className="p-1.5 bg-indigo-100 rounded-lg">
                     <Bot className="h-5 w-5 text-indigo-600" />

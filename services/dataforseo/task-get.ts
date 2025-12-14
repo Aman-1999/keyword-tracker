@@ -52,7 +52,7 @@ export async function getTaskResult(taskId: string): Promise<APIResult<SERPResul
         const client = getDataForSEOClient();
 
         const response = await client.makeRequest<SERPResult>(
-            `/serp/google/organic/task_get/regular/${taskId}`,
+            `/serp/google/organic/task_get/advanced/${taskId}`,
             'GET'
         );
 

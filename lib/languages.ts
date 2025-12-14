@@ -139,3 +139,273 @@ export function getLanguage(code: string): Language | undefined {
 export function isValidLanguageCode(code: string): boolean {
     return LANGUAGES.some(lang => lang.code === code);
 }
+// Basic mapping of country codes (ISO 3166-1 alpha-2) to language codes (ISO 639-1)
+// This is a comprehensive list but can be expanded/refined as needed
+/**
+ * ISO 3166-1 alpha-2 → ISO 639-1 default language mapping
+ * Default language chosen based on:
+ * - Government / business usage
+ * - Search engine behavior
+ * - DataForSEO practical defaults
+ */
+
+/**
+ * ISO 3166-1 alpha-2 → ISO 639-1 default language mapping
+ * Default language chosen based on:
+ * - Government / business usage
+ * - Search engine behavior
+ * - DataForSEO practical defaults
+ */
+
+export const COUNTRY_TO_LANGUAGE: Record<string, string> = {
+    // A
+    AF: 'ps',
+    AL: 'sq',
+    DZ: 'ar',
+    AS: 'en',
+    AD: 'ca',
+    AO: 'pt',
+    AI: 'en',
+    AG: 'en',
+    AR: 'es',
+    AM: 'hy',
+    AW: 'nl',
+    AU: 'en',
+    AT: 'de',
+    AZ: 'az',
+
+    // B
+    BS: 'en',
+    BH: 'ar',
+    BD: 'bn',
+    BB: 'en',
+    BY: 'be',
+    BE: 'nl',
+    BZ: 'en',
+    BJ: 'fr',
+    BM: 'en',
+    BT: 'dz',
+    BO: 'es',
+    BA: 'bs',
+    BW: 'en',
+    BR: 'pt',
+    BN: 'ms',
+    BG: 'bg',
+    BF: 'fr',
+    BI: 'fr',
+
+    // C
+    KH: 'km',
+    CM: 'fr',
+    CA: 'en',
+    CV: 'pt',
+    KY: 'en',
+    CF: 'fr',
+    TD: 'fr',
+    CL: 'es',
+    CN: 'zh',
+    CO: 'es',
+    KM: 'ar',
+    CG: 'fr',
+    CD: 'fr',
+    CR: 'es',
+    CI: 'fr',
+    HR: 'hr',
+    CU: 'es',
+    CY: 'el',
+    CZ: 'cs',
+
+    // D
+    DK: 'da',
+    DJ: 'fr',
+    DM: 'en',
+    DO: 'es',
+
+    // E
+    EC: 'es',
+    EG: 'ar',
+    SV: 'es',
+    GQ: 'es',
+    ER: 'ti',
+    EE: 'et',
+    SZ: 'en',
+    ET: 'am',
+
+    // F
+    FJ: 'en',
+    FI: 'fi',
+    FR: 'fr',
+
+    // G
+    GA: 'fr',
+    GM: 'en',
+    GE: 'ka',
+    DE: 'de',
+    GH: 'en',
+    GR: 'el',
+    GD: 'en',
+    GT: 'es',
+    GN: 'fr',
+    GW: 'pt',
+    GY: 'en',
+
+    // H
+    HT: 'fr',
+    HN: 'es',
+    HK: 'zh',
+    HU: 'hu',
+
+    // I
+    IS: 'is',
+    IN: 'en',
+    ID: 'id',
+    IR: 'fa',
+    IQ: 'ar',
+    IE: 'en',
+    IL: 'he',
+    IT: 'it',
+
+    // J
+    JM: 'en',
+    JP: 'ja',
+    JO: 'ar',
+
+    // K
+    KZ: 'kk',
+    KE: 'en',
+    KI: 'en',
+    KP: 'ko',
+    KR: 'ko',
+    KW: 'ar',
+    KG: 'ky',
+
+    // L
+    LA: 'lo',
+    LV: 'lv',
+    LB: 'ar',
+    LS: 'en',
+    LR: 'en',
+    LY: 'ar',
+    LI: 'de',
+    LT: 'lt',
+    LU: 'lb',
+
+    // M
+    MO: 'zh',
+    MG: 'fr',
+    MW: 'en',
+    MY: 'ms',
+    MV: 'dv',
+    ML: 'fr',
+    MT: 'mt',
+    MH: 'en',
+    MR: 'ar',
+    MU: 'en',
+    MX: 'es',
+    FM: 'en',
+    MD: 'ro',
+    MC: 'fr',
+    MN: 'mn',
+    ME: 'sr',
+    MA: 'ar',
+    MZ: 'pt',
+    MM: 'my',
+
+    // N
+    NA: 'en',
+    NR: 'en',
+    NP: 'ne',
+    NL: 'nl',
+    NZ: 'en',
+    NI: 'es',
+    NE: 'fr',
+    NG: 'en',
+    NO: 'no',
+
+    // O
+    OM: 'ar',
+
+    // P
+    PK: 'ur',
+    PW: 'en',
+    PA: 'es',
+    PG: 'en',
+    PY: 'es',
+    PE: 'es',
+    PH: 'en',
+    PL: 'pl',
+    PT: 'pt',
+    PR: 'es',
+
+    // Q
+    QA: 'ar',
+
+    // R
+    RO: 'ro',
+    RU: 'ru',
+    RW: 'rw',
+
+    // S
+    SA: 'ar',
+    SN: 'fr',
+    RS: 'sr',
+    SC: 'en',
+    SL: 'en',
+    SG: 'en',
+    SK: 'sk',
+    SI: 'sl',
+    SB: 'en',
+    SO: 'so',
+    ZA: 'en',
+    ES: 'es',
+    LK: 'si',
+    SD: 'ar',
+    SR: 'nl',
+    SE: 'sv',
+    CH: 'de',
+    SY: 'ar',
+
+    // T
+    TW: 'zh',
+    TJ: 'tg',
+    TZ: 'en',
+    TH: 'th',
+    TL: 'pt',
+    TG: 'fr',
+    TO: 'en',
+    TT: 'en',
+    TN: 'ar',
+    TR: 'tr',
+    TM: 'tk',
+
+    // U
+    UG: 'en',
+    UA: 'uk',
+    AE: 'en',
+    GB: 'en',
+    US: 'en',
+    UY: 'es',
+    UZ: 'uz',
+
+    // V
+    VU: 'en',
+    VE: 'es',
+    VN: 'vi',
+
+    // Y
+    YE: 'ar',
+
+    // Z
+    ZM: 'en',
+    ZW: 'en',
+};
+
+
+
+/**
+ * Get language code for a given country code
+ */
+export function getLanguageForCountry(countryCode: string): string | undefined {
+    if (!countryCode) return undefined;
+    return COUNTRY_TO_LANGUAGE[countryCode.toUpperCase()];
+}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
 import LanguageSelect from '@/components/LanguageSelect';
+import { getLanguageForCountry } from '@/lib/languages';
 import OSSelect from '@/components/OSSelect';
 import {
     Search, Loader2, AlertCircle, CheckCircle, Globe, TrendingUp,
@@ -318,6 +319,17 @@ export default function Dashboard() {
                                     onSelect={(location) => {
                                         setLocationName(location.value);
                                         setLocationCode(location.id);
+
+                                        // Auto-select language based on country
+                                        if (location.country_iso_code) {
+                                            const langCode = getLanguageForCountry(location.country_iso_code);
+                                            if (langCode) {
+                                                setAdvancedParams(prev => ({
+                                                    ...prev,
+                                                    language: langCode
+                                                }));
+                                            }
+                                        }
                                     }}
                                 />
                             </div>

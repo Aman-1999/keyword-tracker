@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import DetailedResultsTable from '@/components/DetailedResultsTable';
 import {
     ArrowLeft, Globe, MapPin, Loader2,
     CheckCircle, AlertCircle, TrendingUp, Calendar, Download
@@ -164,8 +165,8 @@ export default function ResultsPage() {
                             <div className="flex items-center gap-3 mb-2">
                                 <h1 className="text-3xl font-bold text-gray-900">{data.domain}</h1>
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold border capitalize ${data.status === 'completed'
-                                        ? 'bg-green-100 text-green-700 border-green-200'
-                                        : 'bg-blue-100 text-blue-700 border-blue-200'
+                                    ? 'bg-green-100 text-green-700 border-green-200'
+                                    : 'bg-blue-100 text-blue-700 border-blue-200'
                                     }`}>
                                     {data.status}
                                 </span>
@@ -242,118 +243,7 @@ export default function ResultsPage() {
                     </div>
                 )}
 
-                {data.results && data.results.length > 0 && (
-                    <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
-                        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5 text-indigo-600" />
-                                Ranking Results
-                            </h2>
-                            <span className="bg-indigo-100 text-indigo-700 text-sm font-bold px-4 py-1.5 rounded-full shadow-sm">
-                                {data.results.length} Keywords
-                            </span>
-                        </div>
-
-                        <div className="divide-y divide-gray-100">
-                            {data.results.map((result, index) => (
-                                <div key={index} className="p-6 hover:bg-gray-50/80 transition-colors group">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                                                    {result.keyword}
-                                                </h3>
-                                                {result.rank ? (
-                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">
-                                                        <CheckCircle className="w-3 h-3 mr-1.5" />
-                                                        Found
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">
-                                                        Not in top 100
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-gray-500 flex items-center gap-2 truncate max-w-xl">
-                                                <Globe className="w-4 h-4 text-gray-400" />
-                                                <span className="truncate">{result.url || 'URL not found'}</span>
-                                            </p>
-                                        </div>
-
-                                        <div className="text-left sm:text-right bg-gray-50 sm:bg-transparent p-4 sm:p-0 rounded-xl">
-                                            <div className="text-4xl font-black text-indigo-600 tracking-tight">
-                                                {result.rank ? `#${result.rank}` : '-'}
-                                            </div>
-                                            <p className="text-xs font-semibold text-gray-500 mt-1 uppercase tracking-wide">Position</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4 space-y-4">
-                                        {(result.title || result.description) && (
-                                            <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                                                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Meta Data</h4>
-                                                {result.title && (
-                                                    <p className="text-indigo-600 font-medium text-sm mb-1 hover:underline cursor-pointer">
-                                                        {result.title}
-                                                    </p>
-                                                )}
-                                                {result.description && (
-                                                    <p className="text-gray-600 text-sm line-clamp-2">
-                                                        {result.description}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {result.top_rankers && result.top_rankers.length > 0 && (
-                                            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                                <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
-                                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Top Competitors</h4>
-                                                </div>
-                                                <div className="divide-y divide-gray-100">
-                                                    {result.top_rankers.map((competitor, idx) => (
-                                                        <div key={idx} className="px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors">
-                                                            <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-gray-100 text-gray-600 rounded text-xs font-bold">
-                                                                {competitor.rank}
-                                                            </span>
-                                                            <div className="min-w-0 flex-1">
-                                                                <p className="text-sm font-medium text-gray-900 truncate">{competitor.domain}</p>
-                                                                <a href={competitor.url} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-500 hover:underline truncate block">
-                                                                    {competitor.url}
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {(result.etv || result.search_volume) && (
-                                        <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-gray-100">
-                                            <div className="bg-gray-50 rounded-lg p-3">
-                                                <p className="text-xs font-medium text-gray-500 mb-1">Est. Traffic Value</p>
-                                                <p className="font-bold text-gray-900">${result.etv?.toFixed(2) || '0.00'}</p>
-                                            </div>
-                                            <div className="bg-gray-50 rounded-lg p-3">
-                                                <p className="text-xs font-medium text-gray-500 mb-1">CPC</p>
-                                                <p className="font-bold text-gray-900">${result.cpc?.toFixed(2) || '-'}</p>
-                                            </div>
-                                            <div className="bg-gray-50 rounded-lg p-3">
-                                                <p className="text-xs font-medium text-gray-500 mb-1">Search Volume</p>
-                                                <p className="font-bold text-gray-900">{result.search_volume || '-'}</p>
-                                            </div>
-                                            <div className="bg-gray-50 rounded-lg p-3">
-                                                <p className="text-xs font-medium text-gray-500 mb-1">Competition</p>
-                                                <p className="font-bold text-gray-900">{result.competition || '-'}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                <DetailedResultsTable results={data.results} />
             </main>
         </div>
     );

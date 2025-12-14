@@ -163,6 +163,7 @@ export async function GET(request: Request) {
       value: loc.location_name,
       type: loc.location_type,
       location_code: loc.location_code,
+      country_iso_code: loc.country_iso_code,
     }));
 
     // Update cache

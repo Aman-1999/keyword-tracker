@@ -233,6 +233,24 @@ const RankingResultSchema = new mongoose.Schema({
         type: { type: String },
     },
 
+    // AI Overview
+    ai_overview: [{
+        type: { type: String },
+        asynchronous_ai_overview: Boolean,
+        items: [{
+            title: String,
+            url: String,
+            domain: String,
+            description: String,
+        }],
+        references: [{
+            title: String,
+            url: String,
+            domain: String,
+            source: String,
+        }]
+    }],
+
     // Refinement Chips
     refinement_chips: [String],
 
@@ -251,6 +269,8 @@ const RankingResultSchema = new mongoose.Schema({
             description: String,
         }],
     }],
+    isAiOverview: { type: Boolean, default: false },
+    isPeopleAlsoAsk: { type: Boolean, default: false },
 
     // Search Intent
     search_intent: {

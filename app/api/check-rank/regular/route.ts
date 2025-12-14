@@ -93,6 +93,13 @@ export async function POST(request: Request) {
 
         const finalLocationCode = location_code || (location_name ? null : 2840);
 
+        console.log('📍 Location Debug:', {
+            location,
+            location_name,
+            location_code,
+            finalLocationCode
+        });
+
         // Submit tasks using task_post API
         const taskResult = await submitDomainRankingTasks(
             domain,
@@ -119,11 +126,26 @@ export async function POST(request: Request) {
         // Extract task IDs
         const taskIds = taskResult.data.map(t => t.taskId);
         console.log(taskResult);
+
+        // Fetch location name from database if not provided
+        let finalLocationName = location_name || location;
+        if (!finalLocationName && finalLocationCode) {
+            try {
+                const Location = (await import('@/models/Location')).default;
+                const locationDoc = await Location.findOne({ location_code: finalLocationCode });
+                if (locationDoc) {
+                    finalLocationName = locationDoc.location_name;
+                }
+            } catch (err) {
+                console.error('Failed to fetch location name:', err);
+            }
+        }
+
         // Save search history with task IDs
         const history = await SearchHistory.create({
             userId: user._id,
             domain,
-            location: location_name || location || 'Unknown',
+            location: finalLocationName || 'Unknown',
             location_code: finalLocationCode || 0,
             keywords,
             filters: searchFilters,

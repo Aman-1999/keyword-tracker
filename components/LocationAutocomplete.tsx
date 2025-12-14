@@ -10,6 +10,7 @@ interface Location {
     value: string;
     type: string;
     location_code: number;
+    country_iso_code?: string;
 }
 
 interface Props {

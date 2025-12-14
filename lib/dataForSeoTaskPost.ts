@@ -129,7 +129,7 @@ export async function getReadyTasks(): Promise<TaskResult[]> {
 export async function getTaskResult(taskId: string): Promise<any> {
     try {
         const response = await fetch(
-            `${DATAFORSEO_API_BASE}/serp/google/organic/task_get/${taskId}`,
+            `${DATAFORSEO_API_BASE}/serp/google/organic/task_get/advanced/${taskId}`,
             {
                 method: 'GET',
                 headers: {

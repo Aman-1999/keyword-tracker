@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "populate-locations": "ts-node --compiler-options {\\\"module\\\":\\\"commonjs\\\"} scripts/populate-locations.ts"
+    "populate-locations": "ts-node --compiler-options {\\\"module\\\":\\\"commonjs\\\"} scripts/populate-locations.ts",
+    "update-rankings": "ts-node --compiler-options {\\\"module\\\":\\\"commonjs\\\"} scripts/update-rankings.ts"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.0",
@@ -18,7 +19,8 @@
     "next": "^16.0.7",
     "react": "19.2.0",
     "react-dom": "19.2.0",
-    "react-redux": "^9.2.0"
+    "react-redux": "^9.2.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

@@ -25,10 +25,11 @@ export default function LocationAutocomplete({ value, onChange, onSelect }: Prop
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
-    const isSelectingRef = useRef(false); // Track if user is selecting from dropdown
+    const shouldSearchRef = useRef(false); // Only search if change comes from user typing
 
     useEffect(() => {
         if (value !== query) {
+            shouldSearchRef.current = false; // Don't search on prop updates
             setQuery(value);
         }
     }, [value]);
@@ -44,9 +45,8 @@ export default function LocationAutocomplete({ value, onChange, onSelect }: Prop
     }, []);
 
     useEffect(() => {
-        // Skip API call if user just selected a location
-        if (isSelectingRef.current) {
-            isSelectingRef.current = false;
+        // Skip API call if update wasn't from user typing
+        if (!shouldSearchRef.current) {
             return;
         }
 
@@ -74,7 +74,7 @@ export default function LocationAutocomplete({ value, onChange, onSelect }: Prop
     }, [query]);
 
     const handleSelect = (location: Location) => {
-        isSelectingRef.current = true; // Set flag before updating query
+        shouldSearchRef.current = false;
         setQuery(location.value);
         onChange(location.value);
         setIsOpen(false);
@@ -84,6 +84,7 @@ export default function LocationAutocomplete({ value, onChange, onSelect }: Prop
     };
 
     const clearInput = () => {
+        shouldSearchRef.current = false;
         setQuery('');
         onChange('');
         setResults([]);
@@ -98,6 +99,7 @@ export default function LocationAutocomplete({ value, onChange, onSelect }: Prop
                     type="text"
                     value={query}
                     onChange={(e) => {
+                        shouldSearchRef.current = true; // Mark as typing interaction
                         setQuery(e.target.value);
                         onChange(e.target.value);
                     }}

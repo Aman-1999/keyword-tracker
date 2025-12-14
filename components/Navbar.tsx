@@ -48,19 +48,22 @@ export default function Navbar() {
 
                         {isAuthenticated ? (
                             <>
-                                {user?.role === 'admin' ? (
+                                <Link href="/dashboard" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
+                                    Dashboard
+                                </Link>
+                                <Link href="/history" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
+                                    History
+                                </Link>
+                                <Link href="/analytics" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
+                                    Analytics
+                                </Link>
+                                <Link href="/user" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
+                                    User
+                                </Link>
+                                {user?.role === 'admin' && (
                                     <Link href="/admin" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
                                         Admin
                                     </Link>
-                                ) : (
-                                    <>
-                                        <Link href="/dashboard" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
-                                            Dashboard
-                                        </Link>
-                                        <Link href="/history" className="text-gray-700 hover:text-indigo-600 font-medium transition-colors">
-                                            History
-                                        </Link>
-                                    </>
                                 )}
                             </>
                         ) : null}
@@ -124,7 +127,35 @@ export default function Navbar() {
 
                         {isAuthenticated ? (
                             <>
-                                {user?.role === 'admin' ? (
+                                <Link
+                                    href="/dashboard"
+                                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    Dashboard
+                                </Link>
+                                <Link
+                                    href="/history"
+                                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    History
+                                </Link>
+                                <Link
+                                    href="/analytics"
+                                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    Analytics
+                                </Link>
+                                <Link
+                                    href="/user"
+                                    className="block px-3 py-2 rounded-md text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    User
+                                </Link>
+                                {user?.role === 'admin' && (
                                     <Link
                                         href="/admin"
                                         className="block px-3 py-2 rounded-md text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium"
@@ -132,23 +163,6 @@ export default function Navbar() {
                                     >
                                         Admin Dashboard
                                     </Link>
-                                ) : (
-                                    <>
-                                        <Link
-                                            href="/dashboard"
-                                            className="block px-3 py-2 rounded-md text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium"
-                                            onClick={() => setIsOpen(false)}
-                                        >
-                                            Dashboard
-                                        </Link>
-                                        <Link
-                                            href="/history"
-                                            className="block px-3 py-2 rounded-md text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium"
-                                            onClick={() => setIsOpen(false)}
-                                        >
-                                            History
-                                        </Link>
-                                    </>
                                 )}
                                 <div className="pt-4 border-t border-gray-100 mt-2">
                                     <div className="px-3 py-2 text-sm font-medium text-gray-500">

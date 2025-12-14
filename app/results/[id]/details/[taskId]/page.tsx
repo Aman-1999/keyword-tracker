@@ -95,6 +95,20 @@ export default function ResultDetailsPage() {
     const localPack = items.filter((i: any) => i.type === 'local_pack');
     const relatedSearches = items.filter((i: any) => i.type === 'related_searches');
 
+    // Calculate all feature counts
+    const featureCounts = items.reduce((acc: { [key: string]: number }, item: any) => {
+        acc[item.type] = (acc[item.type] || 0) + 1;
+        return acc;
+    }, {});
+
+    // Find user's specific ranking item
+    const targetRanking = items.find((i: any) =>
+        i.type === 'organic' &&
+        userDomain &&
+        i.domain &&
+        i.domain.toLowerCase().includes(userDomain.replace('www.', '').toLowerCase())
+    );
+
     return (
         <div className="min-h-screen bg-gray-50/50">
             <Navbar />
@@ -112,10 +126,18 @@ export default function ResultDetailsPage() {
                     check_url={result.check_url}
                     se_results_count={result.se_results_count}
                     datetime={result.datetime || new Date().toISOString()}
+                    volume={result.keyword_info?.search_volume}
+                    cpc={result.keyword_info?.cpc}
+                    competition={result.keyword_info?.competition}
+                    featureCounts={featureCounts}
+                    landingUrl={targetRanking?.url}
+                    metaTitle={targetRanking?.title}
+                    metaDescription={targetRanking?.description}
                 />
-                <RefinementChips chips={result.refinement_chips} />
+
                 <div className="space-y-6">
                     {items.length > 0 && <DomainOverview items={items} userDomain={userDomain} />}
+                    <RefinementChips chips={result.refinement_chips} />
                     {aiOverview.length > 0 && <AIOverview items={aiOverview} />}
                     {localPack.length > 0 && <LocalPack items={localPack} />}
                     {peopleAlsoAsk.length > 0 && <PeopleAlsoAsk items={peopleAlsoAsk} />}

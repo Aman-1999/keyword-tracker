@@ -84,7 +84,7 @@ export default function ResultsPage() {
         if (!polling) return;
         const interval = setInterval(() => {
             fetchResults();
-        }, 5000);
+        }, 10000);
         return () => clearInterval(interval);
     }, [polling, fetchResults]);
 

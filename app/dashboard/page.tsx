@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import LocationAutocomplete from '@/components/LocationAutocomplete';
 import LanguageSelect from '@/components/LanguageSelect';
+import CustomSelect from '@/components/CustomSelect';
 import { getLanguageForCountry } from '@/lib/languages';
 import OSSelect from '@/components/OSSelect';
+import LineNumberTextarea from '@/components/LineNumberTextarea';
 import {
     Search, Loader2, AlertCircle, CheckCircle, Globe, TrendingUp,
     ChevronDown, ChevronUp, Settings, Smartphone, Monitor, Tablet,
-    History
+    History, Terminal
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -23,6 +25,7 @@ export default function Dashboard() {
     const [mode, setMode] = useState<'regular' | 'advanced'>('regular');
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [searchHistory, setSearchHistory] = useState<any[]>([]);
+    const [selectedDomainHistory, setSelectedDomainHistory] = useState<any[]>([]);
     const [showHistory, setShowHistory] = useState(false);
     const [tokens, setTokens] = useState<number | null>(null);
 
@@ -94,7 +97,7 @@ export default function Dashboard() {
                 throw new Error('Insufficient tokens. Please contact support to purchase more.');
             }
 
-            const keywordList = keywords.split(',').map(k => k.trim()).filter(k => k);
+            const keywordList = keywords.split(/[\n,]+/).map(k => k.trim()).filter(k => k);
 
             if (keywordList.length === 0) {
                 throw new Error('Please enter at least one keyword');
@@ -203,32 +206,7 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             </button>
-                            {/* <button
-                                type="button"
-                                onClick={() => setMode('advanced')}
-                                className={`p-4 rounded-xl border-2 transition-all ${mode === 'advanced'
-                                    ? 'bg-indigo-50 border-indigo-500 shadow-md'
-                                    : 'bg-gray-50 border-gray-200 hover:border-indigo-300'
-                                    }`}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${mode === 'advanced' ? 'border-indigo-500' : 'border-gray-300'
-                                        }`}>
-                                        {mode === 'advanced' && (
-                                            <div className="w-3 h-3 rounded-full bg-indigo-500"></div>
-                                        )}
-                                    </div>
-                                    <div className="text-left flex-1">
-                                        <div className={`font-semibold text-sm ${mode === 'advanced' ? 'text-indigo-700' : 'text-gray-700'
-                                            }`}>
-                                            Advanced
-                                        </div>
-                                        <div className="text-xs text-gray-500 mt-0.5">
-                                            Up to 700 results • Full data
-                                        </div>
-                                    </div>
-                                </div>
-                            </button> */}
+
                         </div>
                     </div>
 
@@ -264,38 +242,57 @@ export default function Dashboard() {
                                         className="pl-10 block w-full rounded-xl border-gray-200 bg-gray-50/50 p-3 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-indigo-500 sm:text-sm transition-all shadow-sm hover:border-indigo-300"
                                     />
 
-                                    {/* History Dropdown */}
+                                    {/* History Dropdown - Unique Domains */}
                                     {showHistory && searchHistory.length > 0 && (
                                         <div className="absolute z-20 mt-2 w-full bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-auto animate-in fade-in slide-in-from-top-2">
                                             <div className="p-2">
-                                                <div className="text-xs font-semibold text-gray-400 px-2 py-1 uppercase tracking-wider">Recent Searches</div>
-                                                {searchHistory.map((item, idx) => (
-                                                    <button
-                                                        key={idx}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setDomain(item.domain);
-                                                            if (item.lastLocation) {
-                                                                setLocationName(item.lastLocation);
-                                                                setLocationCode(item.lastLocationCode);
-                                                            }
-                                                            // Suggest keywords (optional: set keywords or just show them)
-                                                            if (item.keywords && item.keywords.length > 0) {
-                                                                setKeywords(item.keywords.join(', '));
-                                                            }
-                                                            setShowHistory(false);
-                                                        }}
-                                                        className="w-full text-left px-3 py-2.5 hover:bg-indigo-50 rounded-lg transition-colors group/item"
-                                                    >
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="font-medium text-gray-900 group-hover/item:text-indigo-700">{item.domain}</span>
-                                                            <span className="text-xs text-gray-400">{new Date(item.lastSearched).toLocaleDateString()}</span>
-                                                        </div>
-                                                        <div className="text-xs text-gray-500 mt-0.5 truncate">
-                                                            {item.lastLocation} • {item.keywords.length} keywords
-                                                        </div>
-                                                    </button>
-                                                ))}
+                                                <div className="text-xs font-semibold text-gray-400 px-2 py-1 uppercase tracking-wider">Recent Domains</div>
+                                                {/* Deduplicate domains */}
+                                                {Array.from(new Set(searchHistory.filter(h => h.domain.includes(domain)).map(h => h.domain))).map((uniqueDomain, idx) => {
+                                                    // Find latest entry for metadata
+                                                    const latest = searchHistory.find(h => h.domain === uniqueDomain);
+                                                    if (!latest) return null;
+
+                                                    const dateStr = latest.createdAt ? new Date(latest.createdAt).toLocaleDateString() : 'Unknown Date';
+
+                                                    return (
+                                                        <button
+                                                            key={idx}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const domainHistory = searchHistory.filter(h => h.domain === uniqueDomain);
+                                                                setSelectedDomainHistory(domainHistory);
+
+                                                                // Default to latest
+                                                                setDomain(latest.domain);
+                                                                if (latest.location) {
+                                                                    setLocationName(latest.location);
+                                                                    setLocationCode(latest.location_code);
+                                                                }
+                                                                if (latest.keywords && latest.keywords.length > 0) {
+                                                                    setKeywords(latest.keywords.join('\n'));
+                                                                }
+                                                                // Set Filters if available
+                                                                if (latest.filters) {
+                                                                    setAdvancedParams(prev => ({
+                                                                        ...prev,
+                                                                        language: latest.filters.language || 'en',
+                                                                        device: latest.filters.device || 'desktop',
+                                                                        os: latest.filters.os || 'windows'
+                                                                    }));
+                                                                }
+
+                                                                setShowHistory(false);
+                                                            }}
+                                                            className="w-full text-left px-3 py-2.5 hover:bg-indigo-50 rounded-lg transition-colors group/item"
+                                                        >
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="font-medium text-gray-900 group-hover/item:text-indigo-700">{uniqueDomain}</span>
+                                                                <span className="text-xs text-gray-400">{dateStr}</span>
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     )}
@@ -335,21 +332,105 @@ export default function Dashboard() {
                             </div>
 
                             <div className="col-span-1 group">
-                                <label htmlFor="keywords" className="block text-sm font-semibold text-gray-700 mb-2 group-hover:text-indigo-600 transition-colors">
-                                    Keywords <span className="text-gray-400 font-normal text-xs">(comma separated)</span>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2 group-hover:text-indigo-600 transition-colors">
+                                    Language
                                 </label>
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
-                                    <input
-                                        type="text"
-                                        id="keywords"
-                                        required
-                                        placeholder="seo, marketing, ranking"
-                                        value={keywords}
-                                        onChange={(e) => setKeywords(e.target.value)}
-                                        className="pl-10 block w-full rounded-xl border-gray-200 bg-gray-50/50 p-3 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-indigo-500 sm:text-sm transition-all shadow-sm hover:border-indigo-300"
-                                    />
+                                <LanguageSelect
+                                    value={advancedParams.language}
+                                    onChange={(languageCode) => setAdvancedParams({ ...advancedParams, language: languageCode })}
+                                />
+                            </div>
+                        </div>
+
+                        {selectedDomainHistory.length > 1 && (
+                            <div className="relative rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md animate-in fade-in slide-in-from-top-2 group/history">
+                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-l-xl" />
+                                <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                                    {/* Icon & Label */}
+                                    <div className="flex items-center gap-3 min-w-[200px]">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 group-hover/history:bg-indigo-100 transition-colors">
+                                            <History className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-gray-900">Restore Session</h4>
+                                            <p className="text-xs text-gray-500">{selectedDomainHistory.length} versions available</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Divider for desktop */}
+                                    <div className="hidden sm:block h-10 w-px bg-gray-100" />
+
+                                    {/* Selector Control */}
+                                    <div className="relative flex-1">
+                                        <CustomSelect
+                                            options={selectedDomainHistory.map((h, i) => {
+                                                const dateStr = h.createdAt ? new Date(h.createdAt).toLocaleDateString(undefined, {
+                                                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                                                }) : 'Unknown Date';
+
+                                                // Keyword preview
+                                                const firstKw = h.keywords?.[0] || '';
+                                                const kwPreview = firstKw.length > 15 ? firstKw.substring(0, 15) + '...' : firstKw;
+                                                const countLabel = h.keywords?.length > 1 ? `(+${h.keywords.length - 1})` : '';
+                                                const fullLabel = i === 0 ? `Latest: ${dateStr}` : dateStr;
+
+                                                return {
+                                                    value: i.toString(),
+                                                    label: `${fullLabel} — "${kwPreview}" ${countLabel}`,
+                                                    subtext: `${h.filters?.language?.toUpperCase() || 'EN'} • ${h.location || 'Global'}`
+                                                };
+                                            })}
+                                            value="0"
+                                            onChange={(val) => {
+                                                const idx = parseInt(val);
+                                                const item = selectedDomainHistory[idx];
+                                                if (item) {
+                                                    // 1. Set Location
+                                                    if (item.location) {
+                                                        setLocationName(item.location);
+                                                        setLocationCode(item.location_code);
+                                                    }
+                                                    // 2. Set Keywords
+                                                    if (item.keywords) setKeywords(item.keywords.join('\n'));
+                                                    // 3. Set Filters
+                                                    if (item.filters) {
+                                                        setAdvancedParams(prev => ({
+                                                            ...prev,
+                                                            language: item.filters.language || 'en',
+                                                            device: item.filters.device || 'desktop',
+                                                            os: item.filters.os || 'windows'
+                                                        }));
+                                                    }
+                                                }
+                                            }}
+                                            placeholder="Select a version to restore..."
+                                            className="w-full"
+                                        />
+                                        <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-gray-400 uppercase tracking-widest font-semibold px-1">
+                                            <span className="text-indigo-400">Restores:</span>
+                                            <span className="flex items-center gap-1.5"><Globe className="h-3 w-3" /> Location</span>
+                                            <span className="flex items-center gap-1.5"><Terminal className="h-3 w-3" /> Keywords</span>
+                                            <span className="flex items-center gap-1.5"><Settings className="h-3 w-3" /> Filters</span>
+                                        </div>
+                                    </div>
                                 </div>
+                            </div>
+                        )}
+
+                        <div className="group mt-6">
+                            <label htmlFor="keywords" className="block text-sm font-semibold text-gray-700 mb-2 group-hover:text-indigo-600 transition-colors">
+                                Keywords <span className="text-gray-400 font-normal text-xs">(one per line)</span>
+                            </label>
+                            <div className="relative">
+                                {/* Component replaces simple textarea */}
+                                <LineNumberTextarea
+                                    id="keywords"
+                                    required
+                                    placeholder="seo&#10;marketing&#10;ranking"
+                                    value={keywords}
+                                    onChange={(e) => setKeywords(e.target.value)}
+                                    className="pl-3 block w-full rounded-xl border-gray-200 bg-gray-50/50 p-3 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-indigo-500 sm:text-sm transition-all shadow-sm hover:border-indigo-300 resize-y"
+                                />
                             </div>
                         </div>
 
@@ -403,15 +484,7 @@ export default function Dashboard() {
                                         />
                                     </div>
 
-                                    <div className="space-y-3">
-                                        <label className="text-sm font-semibold text-gray-700">
-                                            Language
-                                        </label>
-                                        <LanguageSelect
-                                            value={advancedParams.language}
-                                            onChange={(languageCode) => setAdvancedParams({ ...advancedParams, language: languageCode })}
-                                        />
-                                    </div>
+
 
 
                                 </div>

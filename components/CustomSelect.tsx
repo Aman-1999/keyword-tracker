@@ -129,11 +129,14 @@ export default function CustomSelect({
     return (
         <div ref={wrapperRef} className={`relative ${className}`}>
             {/* Select Button */}
-            <button
-                type="button"
+            <div
+                role="combobox"
+                aria-expanded={isOpen}
+                aria-haspopup="listbox"
+                tabIndex={0}
                 onClick={() => setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
-                className={`relative w-full rounded-xl border bg-white p-3 text-left transition-all shadow-sm hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${isOpen ? 'border-indigo-500 ring-2 ring-indigo-500' : 'border-gray-200'
+                className={`relative w-full rounded-xl border bg-white p-3 text-left transition-all shadow-sm hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer ${isOpen ? 'border-indigo-500 ring-2 ring-indigo-500' : 'border-gray-200'
                     }`}
             >
                 <div className="flex items-center gap-2">
@@ -159,7 +162,7 @@ export default function CustomSelect({
                             <button
                                 type="button"
                                 onClick={clearSelection}
-                                className="text-gray-400 hover:text-gray-600 transition-colors p-0.5"
+                                className="text-gray-400 hover:text-gray-600 transition-colors p-0.5 rounded-full hover:bg-gray-100"
                             >
                                 <X className="h-4 w-4" />
                             </button>
@@ -170,7 +173,7 @@ export default function CustomSelect({
                         />
                     </div>
                 </div>
-            </button>
+            </div>
 
             {/* Dropdown */}
             {isOpen && (
@@ -206,8 +209,8 @@ export default function CustomSelect({
                                     type="button"
                                     onClick={() => handleSelect(option.value)}
                                     className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${highlightedIndex === index
-                                            ? 'bg-indigo-50'
-                                            : 'hover:bg-gray-50'
+                                        ? 'bg-indigo-50'
+                                        : 'hover:bg-gray-50'
                                         } ${option.value === value
                                             ? 'text-indigo-700 font-medium'
                                             : 'text-gray-900'

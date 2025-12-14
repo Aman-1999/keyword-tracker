@@ -145,8 +145,11 @@ export async function GET(request: Request) {
       };
     });
 
+    // Filter out irrelevant results (loose matches from text search that don't contain the query string)
+    const filtered = scored.filter(s => s.matchQuality >= 50); // Keep score > 10 (Partial match is 10)
+
     // --- SORTING ORDER ---
-    scored.sort((a, b) => {
+    filtered.sort((a, b) => {
       const aIN = a.country_iso_code === "IN" ? 1 : 0;
       const bIN = b.country_iso_code === "IN" ? 1 : 0;
 
@@ -156,7 +159,7 @@ export async function GET(request: Request) {
     });
 
     // Format results
-    const results = scored.slice(0, 20).map((loc) => ({
+    const results = filtered.slice(0, 20).map((loc) => ({
       id: loc.location_code,
       name: loc.location_name,
       subtext: `${loc.location_type} • ${loc.country_iso_code}`,

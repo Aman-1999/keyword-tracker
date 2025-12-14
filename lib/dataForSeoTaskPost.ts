@@ -126,7 +126,7 @@ export async function getReadyTasks(): Promise<TaskResult[]> {
 /**
  * Get specific task result by ID
  */
-export async function getTaskResult(taskId: string): Promise<any> {
+export async function getTaskResult(taskId: string, returnResult: boolean = false): Promise<any> {
     try {
         const response = await fetch(
             `${DATAFORSEO_API_BASE}/serp/google/organic/task_get/advanced/${taskId}`,
@@ -143,6 +143,9 @@ export async function getTaskResult(taskId: string): Promise<any> {
         }
 
         const data = await response.json();
+        if (returnResult) {
+            return data;
+        }
 
         if (!data.tasks || data.tasks.length === 0 || !data.tasks[0].result) {
             throw new Error('No result found for task');

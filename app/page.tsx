@@ -9,7 +9,7 @@ export default function Home() {
     {
       icon: Zap,
       title: 'Lightning Fast Results',
-      description: 'Get real-time ranking data in seconds with our optimized DataForSEO integration.',
+      description: 'Get real-time ranking data in seconds with our optimized Seo integration.',
     },
     {
       icon: Shield,
@@ -291,8 +291,8 @@ export default function Home() {
               <div
                 key={index}
                 className={`relative bg-white rounded-2xl shadow-xl border p-8 flex flex-col ${plan.popular
-                    ? 'border-indigo-500 ring-2 ring-indigo-500 ring-opacity-50 scale-105'
-                    : 'border-gray-100'
+                  ? 'border-indigo-500 ring-2 ring-indigo-500 ring-opacity-50 scale-105'
+                  : 'border-gray-100'
                   }`}
               >
                 {plan.popular && (
@@ -325,8 +325,8 @@ export default function Home() {
                 <Link
                   href={plan.href}
                   className={`w-full flex items-center justify-center py-3 px-6 rounded-xl font-semibold transition-all ${plan.popular
-                      ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:scale-105'
-                      : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:scale-105'
+                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
                     }`}
                 >
                   {plan.cta}

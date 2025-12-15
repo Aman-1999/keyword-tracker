@@ -129,7 +129,7 @@ export async function POST(request: Request) {
                 language_code: searchFilters.language,
                 device: searchFilters.device as 'desktop' | 'mobile' | 'tablet',
                 os: searchFilters.os,
-                priority: 1, // Standard priority
+                priority: 2, // Standard priority
                 userId,
                 depth: 100,
             }

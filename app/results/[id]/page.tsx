@@ -238,7 +238,7 @@ export default function ResultsPage() {
                             />
                         </div>
                         <p className="text-xs text-gray-500 mt-3 text-center">
-                            Checking rankings directly with DataForSEO...
+                            Checking rankings directly with RankTracker...
                         </p>
                     </div>
                 )}

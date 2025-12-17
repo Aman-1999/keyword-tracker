@@ -11,7 +11,7 @@ import LineNumberTextarea from '@/components/LineNumberTextarea';
 import {
     Search, Loader2, AlertCircle, CheckCircle, Globe, TrendingUp,
     ChevronDown, ChevronUp, Settings, Smartphone, Monitor, Tablet,
-    History, Terminal
+    History, Terminal, Zap
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -78,6 +78,7 @@ export default function Dashboard() {
         device: 'desktop',
         os: 'windows',
     });
+    const [priority, setPriority] = useState<1 | 2>(1);
 
     // Helper to clean domain
     const cleanDomain = (url: string) => {
@@ -119,6 +120,7 @@ export default function Dashboard() {
                     device: advancedParams.device,
                     os: advancedParams.os,
                 },
+                priority,
             };
 
             if (locationCode) {
@@ -435,7 +437,49 @@ export default function Dashboard() {
                             </div>
                         </div>
 
-                        <div className="border-t border-gray-100 pt-6">
+                        {/* Priority Selector */}
+                        <div className="group mt-6">
+                            <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2 group-hover:text-indigo-600 transition-colors">
+                                <Zap className="h-4 w-4 text-indigo-500" />
+                                Priority
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                {[
+                                    { id: 1, label: 'Standard', desc: '1x credits', info: 'Normal processing speed' },
+                                    { id: 2, label: 'High', desc: '2x credits', info: 'Faster results' }
+                                ].map((p) => (
+                                    <button
+                                        key={p.id}
+                                        type="button"
+                                        onClick={() => setPriority(p.id as 1 | 2)}
+                                        className={`flex flex-col items-start p-4 rounded-xl border-2 transition-all ${priority === p.id
+                                            ? 'bg-indigo-50 border-indigo-500 shadow-md transform scale-[1.02]'
+                                            : 'bg-white border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${priority === p.id ? 'border-indigo-500' : 'border-gray-300'}`}>
+                                                {priority === p.id && <div className="w-3 h-3 rounded-full bg-indigo-500"></div>}
+                                            </div>
+                                            <span className={`font-semibold text-sm ${priority === p.id ? 'text-indigo-700' : 'text-gray-700'}`}>
+                                                {p.label}
+                                            </span>
+                                        </div>
+                                        <span className={`text-xs ml-7 ${priority === p.id ? 'text-indigo-600' : 'text-gray-500'}`}>{p.desc} • {p.info}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            {priority === 2 && (
+                                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 animate-in fade-in slide-in-from-top-2">
+                                    <Zap className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                                    <p className="text-sm text-amber-700">
+                                        <strong>High Priority:</strong> Your keywords will be processed faster, using 2x credits per keyword.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="border-t border-gray-100 pt-6 mt-6">
                             <button
                                 type="button"
                                 onClick={() => setShowAdvanced(!showAdvanced)}
@@ -485,14 +529,27 @@ export default function Dashboard() {
                                         />
                                     </div>
 
-
-
-
                                 </div>
                             </div>
                         )}
 
-                        <div className="flex justify-end pt-6 border-t border-gray-100">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-100">
+                            {/* Credit Cost Preview */}
+                            {keywords.trim() && (
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <span className="font-medium">Estimated Cost:</span>
+                                    <span className="px-3 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-lg">
+                                        {keywords.split(/[\n,]+/).filter(k => k.trim()).length * priority} credits
+                                    </span>
+                                    {priority === 2 && (
+                                        <span className="text-xs text-amber-600 flex items-center gap-1">
+                                            <Zap className="h-3 w-3" />
+                                            High Priority
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+
                             <button
                                 type="submit"
                                 disabled={loading || (tokens !== null && tokens <= 0)}

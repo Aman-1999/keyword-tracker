@@ -62,6 +62,7 @@ export async function POST(request: Request) {
             location_name,
             keywords,
             filters,
+            priority = 1, // Default to priority 1
         } = await request.json();
 
         // Validation
@@ -98,8 +99,17 @@ export async function POST(request: Request) {
             );
         }
 
-        // Calculate cost (1 token per keyword)
-        const cost = sanitizedKeywords.length;
+        // Validate priority
+        if (priority !== 1 && priority !== 2) {
+            return NextResponse.json(
+                { error: 'Priority must be either 1 or 2.' },
+                { status: 400 }
+            );
+        }
+
+        // Calculate cost based on priority (1x for priority 1, 2x for priority 2)
+        const priorityMultiplier = priority === 2 ? 2 : 1;
+        const cost = sanitizedKeywords.length * priorityMultiplier;
 
         if (user.requestTokens < cost) {
             return NextResponse.json(
@@ -129,7 +139,7 @@ export async function POST(request: Request) {
                 language_code: searchFilters.language,
                 device: searchFilters.device as 'desktop' | 'mobile' | 'tablet',
                 os: searchFilters.os,
-                priority: 2, // Standard priority
+                priority: priority as 1 | 2, // Use dynamic priority from request
                 userId,
                 depth: 100,
             }

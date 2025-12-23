@@ -99,57 +99,70 @@ export async function submitBatchTasks(
 ): Promise<APIResult<SubmittedTask[]>> {
     try {
         const client = getDataForSEOClient();
+        const BATCH_SIZE = 100;
+        const allSubmittedTasks: SubmittedTask[] = [];
+        let totalCost = 0;
 
-        // Build batch payload
-        const payload = tasks.map(task => {
-            const item: any = {
-                keyword: task.keyword,
-                language_code: task.language_code || 'en',
-                device: task.device || 'desktop',
-                os: task.os || 'windows',
-                depth: task.depth || 20,
-                priority: task.priority || 1,
-            };
+        // Process in batches
+        for (let i = 0; i < tasks.length; i += BATCH_SIZE) {
+            const batchTasks = tasks.slice(i, i + BATCH_SIZE);
 
-            // Add location
-            if (task.location_name) {
-                item.location_name = task.location_name;
-            } else if (task.location_code) {
-                item.location_code = task.location_code;
-            } else {
-                item.location_code = 2840;
+            // Build batch payload
+            const payload = batchTasks.map(task => {
+                const item: any = {
+                    keyword: task.keyword,
+                    language_code: task.language_code || 'en',
+                    device: task.device || 'desktop',
+                    os: task.os || 'windows',
+                    depth: task.depth || 20,
+                    priority: task.priority || 1,
+                };
+
+                // Add location
+                if (task.location_name) {
+                    item.location_name = task.location_name;
+                } else if (task.location_code) {
+                    item.location_code = task.location_code;
+                } else {
+                    item.location_code = 2840;
+                }
+
+                // Add optional parameters
+                if (task.tag) item.tag = task.tag;
+                if (task.postback_url) item.postback_url = task.postback_url;
+                if (task.pingback_url) item.pingback_url = task.pingback_url;
+                if (task.stop_crawl_on_match) item.stop_crawl_on_match = task.stop_crawl_on_match;
+
+                return item;
+            });
+
+            // Make API request for batch
+            const response = await client.makeRequest(
+                '/serp/google/organic/task_post',
+                'POST',
+                payload,
+                userId
+            );
+
+            // Extract task IDs
+            if (response.tasks && response.tasks.length > 0) {
+                const batchResults: SubmittedTask[] = response.tasks.map((task, index) => ({
+                    taskId: task.id,
+                    keyword: batchTasks[index].keyword,
+                    statusCode: task.status_code,
+                    cost: task.cost,
+                }));
+
+                allSubmittedTasks.push(...batchResults);
+                if (response.cost) totalCost += response.cost;
             }
+        }
 
-            // Add optional parameters
-            if (task.tag) item.tag = task.tag;
-            if (task.postback_url) item.postback_url = task.postback_url;
-            if (task.pingback_url) item.pingback_url = task.pingback_url;
-            if (task.stop_crawl_on_match) item.stop_crawl_on_match = task.stop_crawl_on_match;
-
-            return item;
-        });
-
-        // Make API request
-        const response = await client.makeRequest(
-            '/serp/google/organic/task_post',
-            'POST',
-            payload,
-            userId
-        );
-
-        // Extract task IDs
-        if (response.tasks && response.tasks.length > 0) {
-            const submittedTasks: SubmittedTask[] = response.tasks.map((task, index) => ({
-                taskId: task.id,
-                keyword: tasks[index].keyword,
-                statusCode: task.status_code,
-                cost: task.cost,
-            }));
-
+        if (allSubmittedTasks.length > 0) {
             return {
                 success: true,
-                data: submittedTasks,
-                cost: response.cost,
+                data: allSubmittedTasks,
+                cost: totalCost,
             };
         }
 

@@ -11,8 +11,9 @@ import LineNumberTextarea from '@/components/LineNumberTextarea';
 import {
     Search, Loader2, AlertCircle, CheckCircle, Globe, TrendingUp,
     ChevronDown, ChevronUp, Settings, Smartphone, Monitor, Tablet,
-    History, Terminal, Zap
+    History, Terminal, Zap, List, ChevronRight
 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Dashboard() {
     const [domain, setDomain] = useState('');
@@ -28,8 +29,9 @@ export default function Dashboard() {
     const [selectedDomainHistory, setSelectedDomainHistory] = useState<any[]>([]);
     const [showHistory, setShowHistory] = useState(false);
     const [tokens, setTokens] = useState<number | null>(null);
+    const [keywordLists, setKeywordLists] = useState<any[]>([]);
 
-    // Fetch history and tokens on mount
+    // Fetch history, tokens, and keyword lists on mount
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -45,6 +47,13 @@ export default function Dashboard() {
                 if (tokensRes.ok) {
                     const data = await tokensRes.json();
                     setTokens(data.tokens);
+                }
+
+                // Fetch keyword lists
+                const listsRes = await fetch('/api/v1/keyword-lists');
+                if (listsRes.ok) {
+                    const data = await listsRes.json();
+                    setKeywordLists(data.data || []);
                 }
             } catch (error) {
                 console.error('Failed to fetch data:', error);
@@ -102,6 +111,10 @@ export default function Dashboard() {
 
             if (keywordList.length === 0) {
                 throw new Error('Please enter at least one keyword');
+            }
+
+            if (keywordList.length > 1000) {
+                throw new Error(`Maximum 1000 keywords allowed per request. You entered ${keywordList.length}.`);
             }
 
             const cleanedDomain = cleanDomain(domain);
@@ -240,67 +253,118 @@ export default function Dashboard() {
                                         onChange={(e) => setDomain(e.target.value)}
                                         onBlur={() => setDomain(cleanDomain(domain))}
                                         onFocus={() => {
-                                            if (searchHistory.length > 0) setShowHistory(true);
+                                            if (keywordLists.length > 0 || searchHistory.length > 0) setShowHistory(true);
                                         }}
                                         className="pl-10 block w-full rounded-xl border-gray-200 bg-gray-50/50 p-3 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:bg-white focus:ring-indigo-500 sm:text-sm transition-all shadow-sm hover:border-indigo-300"
                                     />
 
-                                    {/* History Dropdown - Unique Domains */}
-                                    {showHistory && searchHistory.length > 0 && (
-                                        <div className="absolute z-20 mt-2 w-full bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-auto animate-in fade-in slide-in-from-top-2">
-                                            <div className="p-2">
-                                                <div className="text-xs font-semibold text-gray-400 px-2 py-1 uppercase tracking-wider">Recent Domains</div>
-                                                {/* Deduplicate domains */}
-                                                {Array.from(new Set(searchHistory.filter(h => h.domain.includes(domain)).map(h => h.domain))).map((uniqueDomain, idx) => {
-                                                    // Find latest entry for metadata
-                                                    const latest = searchHistory.find(h => h.domain === uniqueDomain);
-                                                    if (!latest) return null;
-
-                                                    const dateStr = latest.createdAt ? new Date(latest.createdAt).toLocaleDateString() : 'Unknown Date';
-
-                                                    return (
+                                    {/* History Dropdown - Keyword Lists + Recent Domains */}
+                                    {showHistory && (keywordLists.length > 0 || searchHistory.length > 0) && (
+                                        <div className="absolute z-20 mt-2 w-full bg-white rounded-xl shadow-xl border border-gray-100 max-h-80 overflow-auto animate-in fade-in slide-in-from-top-2">
+                                            {/* Keyword Lists Section */}
+                                            {keywordLists.length > 0 && (
+                                                <div className="p-2 border-b border-gray-100">
+                                                    <div className="flex items-center justify-between px-2 py-1">
+                                                        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                                                            <List className="w-3 h-3" /> Saved Lists
+                                                        </div>
+                                                        <Link href="/keyword-lists" className="text-xs text-indigo-600 hover:text-indigo-700">
+                                                            Manage
+                                                        </Link>
+                                                    </div>
+                                                    {keywordLists.filter(l => !domain || l.domain.includes(domain)).slice(0, 5).map((list) => (
                                                         <button
-                                                            key={idx}
+                                                            key={list._id}
                                                             type="button"
                                                             onClick={() => {
-                                                                const domainHistory = searchHistory.filter(h => h.domain === uniqueDomain);
-                                                                setSelectedDomainHistory(domainHistory);
-
-                                                                // Default to latest
-                                                                setDomain(latest.domain);
-                                                                if (latest.location) {
-                                                                    setLocationName(latest.location);
-                                                                    setLocationCode(latest.location_code);
+                                                                setDomain(list.domain);
+                                                                setLocationName(list.location);
+                                                                if (list.locationCode) {
+                                                                    setLocationCode(list.locationCode);
                                                                 }
-                                                                if (latest.keywords && latest.keywords.length > 0) {
-                                                                    setKeywords(latest.keywords.join('\n'));
+                                                                if (list.keywords && list.keywords.length > 0) {
+                                                                    setKeywords(list.keywords.map((k: any) => k.keyword).join('\n'));
                                                                 }
-                                                                // Set Filters if available
-                                                                if (latest.filters) {
-                                                                    setAdvancedParams(prev => ({
-                                                                        ...prev,
-                                                                        language: latest.filters.language || 'en',
-                                                                        device: latest.filters.device || 'desktop',
-                                                                        os: latest.filters.os || 'windows'
-                                                                    }));
-                                                                }
-
+                                                                setAdvancedParams(prev => ({
+                                                                    ...prev,
+                                                                    language: list.language || 'en',
+                                                                }));
                                                                 setShowHistory(false);
                                                             }}
                                                             className="w-full text-left px-3 py-2.5 hover:bg-indigo-50 rounded-lg transition-colors group/item"
                                                         >
                                                             <div className="flex items-center justify-between">
-                                                                <span className="font-medium text-gray-900 group-hover/item:text-indigo-700">{uniqueDomain}</span>
-                                                                <span className="text-xs text-gray-400">{dateStr}</span>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <span className="font-medium text-gray-900 group-hover/item:text-indigo-700 block truncate">{list.name}</span>
+                                                                    <span className="text-xs text-gray-400 flex items-center gap-2">
+                                                                        <Globe className="w-3 h-3" /> {list.domain}
+                                                                        <span className="text-gray-300">•</span>
+                                                                        {list.keywordCount || list.keywords?.length || 0} keywords
+                                                                    </span>
+                                                                </div>
+                                                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover/item:text-indigo-500" />
                                                             </div>
                                                         </button>
-                                                    );
-                                                })}
-                                            </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Recent Domains Section */}
+                                            {searchHistory.length > 0 && (
+                                                <div className="p-2">
+                                                    <div className="text-xs font-semibold text-gray-400 px-2 py-1 uppercase tracking-wider">Recent Domains</div>
+                                                    {/* Deduplicate domains */}
+                                                    {Array.from(new Set(searchHistory.filter(h => h.domain.includes(domain)).map(h => h.domain))).map((uniqueDomain, idx) => {
+                                                        // Find latest entry for metadata
+                                                        const latest = searchHistory.find(h => h.domain === uniqueDomain);
+                                                        if (!latest) return null;
+
+                                                        const dateStr = latest.createdAt ? new Date(latest.createdAt).toLocaleDateString() : 'Unknown Date';
+
+                                                        return (
+                                                            <button
+                                                                key={idx}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const domainHistory = searchHistory.filter(h => h.domain === uniqueDomain);
+                                                                    setSelectedDomainHistory(domainHistory);
+
+                                                                    // Default to latest
+                                                                    setDomain(latest.domain);
+                                                                    if (latest.location) {
+                                                                        setLocationName(latest.location);
+                                                                        setLocationCode(latest.location_code);
+                                                                    }
+                                                                    if (latest.keywords && latest.keywords.length > 0) {
+                                                                        setKeywords(latest.keywords.join('\n'));
+                                                                    }
+                                                                    // Set Filters if available
+                                                                    if (latest.filters) {
+                                                                        setAdvancedParams(prev => ({
+                                                                            ...prev,
+                                                                            language: latest.filters.language || 'en',
+                                                                            device: latest.filters.device || 'desktop',
+                                                                            os: latest.filters.os || 'windows'
+                                                                        }));
+                                                                    }
+
+                                                                    setShowHistory(false);
+                                                                }}
+                                                                className="w-full text-left px-3 py-2.5 hover:bg-indigo-50 rounded-lg transition-colors group/item"
+                                                            >
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="font-medium text-gray-900 group-hover/item:text-indigo-700">{uniqueDomain}</span>
+                                                                    <span className="text-xs text-gray-400">{dateStr}</span>
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
-                                {/* Click outside handler would be good here, but for simplicity relying on selection to close */}
+                                {/* Click outside handler */}
                                 {showHistory && (
                                     <div
                                         className="fixed inset-0 z-10"

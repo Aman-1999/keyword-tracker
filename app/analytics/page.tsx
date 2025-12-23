@@ -209,7 +209,7 @@ export default function AnalyticsPage() {
                                     />
                                     <YAxis
                                         reversed
-                                        domain={[1, 'auto']}
+                                        domain={[1, 100]}
                                         tick={{ fontSize: 12, fill: '#6b7280' }}
                                         width={40}
                                         axisLine={false}

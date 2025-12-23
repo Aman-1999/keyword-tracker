@@ -6,7 +6,7 @@ import CustomSelect, { type SelectOption } from './CustomSelect';
 
 interface Props {
     value: string;
-    onChange: (languageCode: string) => void;
+    onChange: (languageCode: string, languageName?: string) => void;
     className?: string;
 }
 
@@ -20,11 +20,16 @@ export default function LanguageSelect({ value, onChange, className = '' }: Prop
             : lang.code,
     }));
 
+    const handleChange = (code: string) => {
+        const lang = LANGUAGES.find(l => l.code === code);
+        onChange(code, lang?.label);
+    };
+
     return (
         <CustomSelect
             options={languageOptions}
             value={value}
-            onChange={onChange}
+            onChange={handleChange}
             placeholder="Select a language"
             searchable={true}
             icon={<Languages className="h-4 w-4" />}
